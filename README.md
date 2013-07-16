@@ -42,7 +42,7 @@ command line tools:
   *  Gephi (https://gephi.org/), with installed plugin Graph Streaming API,
      it can be installed internally from Gephi
 
-The first tool has the following dependencies on the external libraries and 
+The second tool has the following dependencies on the external libraries and 
 command line tools:
   *  igraph library (http://igraph.sourceforge.net/), with igraph Python 
      extension module, version 6.0 or higher.
