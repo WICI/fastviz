@@ -1,0 +1,74 @@
+# ===== DIRECTORIES =====
+path_mencoder=
+path_frames_output=./frames
+path_movies_output=./movies
+
+# ===== JSON event markers =====
+add_node=an
+delete_node=dn
+change_node=cn
+add_edge=ae
+delete_edge=de
+change_edge=ce
+add_label=al
+delete_label=dl
+change_label=cl
+
+# ===== MOVIE APPAREANCE =====
+
+movie_width=1280
+movie_height=720
+frames_per_event=1
+frames_per_second=30
+max_events=3600
+layout_max_iterations=5
+layout_max_delta=0.1
+number_fadeout_frames=60
+
+initial_newnode_state=0
+
+min_node_size=10
+max_node_size=50
+min_edge_size=0
+max_edge_size=50
+min_label_size=10
+max_label_size=50
+default_label_x_start=100
+default_label_y_start=100
+default_label_size=25
+default_label_text=new_label
+few_nodes=30
+medium_nodes=60
+bliping_sequence_length=18
+bliping_delta=2
+fading_delta=1
+
+# ===== MOVIE COLOR SCHEME =====
+
+#Default scheme
+label_color=#ffffff
+vertex_color=#000000
+edge_color=#b3b4c3
+bg_color=#62626d
+text_color=#ffffff33
+
+#Black and yellow scheme
+#label_color=#efd303
+#vertex_color=#efd303
+#edge_color=#e1cccc
+#bg_color=black
+#text_color=#efd303
+
+#Black, gray, white, darkgreen scheme
+#label_color=#ffffff
+#vertex_color=#5d5d5d
+#edge_color=#002df6
+#bg_color=black
+#text_color=#ffffff
+
+#Black, darkred, white, darkgray  scheme
+#label_color=#ffffff
+#vertex_color=#794040
+#edge_color=#867654
+#bg_color=black
+#text_color=#ffffff'
