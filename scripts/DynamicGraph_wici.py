@@ -5,7 +5,7 @@ Produces movies of evolving graphs from a feed of JSON events
 
 @author: Luca Maria Aiello 
 @author: Przemek Grabowicz
-@version: 0.2
+@version: 1.0
 '''
 #Python standard libraries
 import sys, os, math, random, shutil, time, datetime, traceback, json
@@ -15,13 +15,13 @@ from igraph.layout import Layout
 
 import Constants as const
 
-
 #random generator initialization
 random.seed()
 
 class DynamicGraph():
     """
-    Description here...
+    An object embedding the evolution of the graph. It receives in input graph update events
+    and it generates in output a movie produced with the mencoder tool. 
     
     @param layout_type the graph layout. In the current version, only the Fruchterman-Reingold ('fr') layout is available
     @param width the width of the movie, in pixels
@@ -130,6 +130,9 @@ class DynamicGraph():
         ctx.fill()
 
     def bliping(self):
+        """
+        Handles the animation of nodes entering the network
+        """
         for nodename in self.new_nodes.keys():
             node_idx=self.nodes_dict[nodename]
             status = self.new_nodes[nodename]
@@ -156,6 +159,9 @@ class DynamicGraph():
                 self.new_nodes.pop(nodename)
     
     def fading(self):
+        """
+        Handles the animation of nodes churning out
+        """
         to_delete=[]
         for nodename in self.sentenced_nodes:
             node_idx=self.nodes_dict[nodename]
@@ -697,7 +703,7 @@ class DynamicGraph():
         
         self.remove_boundaries(self.layout)
         
-    #PUBLIC METHODS ------------------------------------------------------------------------------
+    #INTERFACE METHODS ------------------------------------------------------------------------------
     
     def read_json_events(self,jsonfile):
         """
@@ -748,8 +754,7 @@ class DynamicGraph():
             self.fading()
             self.draw_frame(max_iter=layout_max_iterations,max_delta=layout_max_delta)
     
-    def make_movie(self,frames_per_second):
-        output_file='movie.avi'
+    def make_movie(self,frames_per_second,output_file='movie.avi'):
         if self.input_file != None:
             output_file = self.input_file.split('/')[-1].replace('.json','')+'.avi'
         os.system(const.PATH_MENCODER+'mencoder "mf://'+self.path_to_frames+'/*.png" -mf fps='+str(frames_per_second)+' -o '+self.path_to_movie+'/'+output_file+' -ovc lavc -lavcopts vcodec=msmpeg4v2:vbitrate=10000 > std.out 2> std.err')
