@@ -757,6 +757,7 @@ class DynamicGraph():
     def make_movie(self,frames_per_second,output_file='movie.avi'):
         if self.input_file != None:
             output_file = self.input_file.split('/')[-1].replace('.json','')+'.avi'
+        print "Encoding the movie to file",self.path_to_movie+'/'+output_file,"..."
         os.system(const.PATH_MENCODER+'mencoder "mf://'+self.path_to_frames+'/*.png" -mf fps='+str(frames_per_second)+' -o '+self.path_to_movie+'/'+output_file+' -ovc lavc -lavcopts vcodec=msmpeg4v2:vbitrate=10000 > std.out 2> std.err')
         return
     
@@ -787,7 +788,7 @@ def start(jsonfile, frames_output, movie_output, movie_width=const.MOVIE_WIDTH, 
         dGraph.make_frames(frames_per_event,max_events,layout_max_iterations,layout_max_delta,number_fadeout_frames)
         print "Encoding movie..."
         dGraph.make_movie(frames_per_second)
-        print "Finished rendering"
+        print "Finished rendering of the movie"
     except Exception as e:
         print e
         traceback.print_exc(file=sys.stderr)

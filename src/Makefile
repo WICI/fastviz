@@ -1,29 +1,31 @@
+# export BOOST_SRC=~/scitools/
+# export BOOST_BIN=~/scitools/boost_1_53_0/lib
+# export JSON_SRC=~/scitools/jsoncpp-src-0.5.0/include
+# export JSON_LIBMT=~/scitools/jsoncpp-src-0.5.0/libs/linux-gcc-4.2.4/libjson_linux-gcc-4.2.4_libmt
+# export CPPNET_SRC=~/scitools/cpp-netlib-0.9.4
+# export CPPNET_BIN=~/scitools/cpp-netlib-0.9.4/build/libs/network/src
 
-# BOOST_SRC   = /home/pms/scitools/boost_1_53_0/include
-# BOOST_BIN   = /home/pms/scitools/boost_1_53_0/lib
-# JSON_SRC    = /home/pms/scitools/jsoncpp-src-0.5.0/include
-# JSON_LIBMT    = libjson_linux-gcc-4.2.4_libmt
-# JSON_BIN    = /home/pms/scitools/jsoncpp-src-0.5.0/libs/linux-gcc-4.2.4
-# # CPPNET_LOC  = /home/pms/scitools/cpp-netlib-0.8.1
-# # CPPNET_LOC  = /home/pms/scitools/cpp-netlib-0.9.4
 
 CC = g++
 CXX = g++
 RM = /bin/rm
 
 # -Wall
-CXXFLAGS = -O3 -I. -I$(BOOST_SRC) -I $(JSON_SRC)
-#  -I$(CPPNET_LOC)
+CXXFLAGS = -O3 -I. -I$(BOOST_SRC) -I$(CPPNET_SRC) -I $(JSON_SRC)
 
 LDFLAGS = -L$(BOOST_BIN) -Wl,-rpath $(BOOST_BIN) \
-          -L$(JSON_BIN) -Wl,-rpath $(JSON_BIN)
+          -L$(JSON_BIN) -Wl,-rpath $(JSON_BIN) \
+          -L$(CPPNET_BIN)
 
-LDLIBS  = -lboost_program_options -lboost_filesystem -lboost_regex \
-          -lboost_date_time -lboost_system -l$(JSON_LIBMT)
+LDLIBS  = -lboost_program_options -lboost_filesystem -lboost_regex -lboost_chrono \
+          -lboost_date_time -lboost_system -lboost_thread \
+          -lcppnetlib-client-connections -lcppnetlib-uri \
+          -lcppnetlib-server-parsers -lssl -lcrypto \
+          -l$(JSON_LIBMT)
 
-OBJS =	util/format_time.o util/pace_checker.o \
-	viz/net_collector.o viz/viz_selector.o viz/node.o \
-	viz/client.o viz/client_gephi_light.o
+OBJS =	util/format_time.o util/pace_checker.o
+# 	viz/net_collector.o viz/viz_selector.o viz/node.o \
+# 	viz/client.o viz/client_gephi_light.o \
 # 	viz/client_gephi.o
 
 all: $(OBJS) visualize_tweets_finitefile

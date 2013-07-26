@@ -33,12 +33,7 @@ The first tool has the following dependencies on the external libraries and
 command line tools:
   *  Boost library (http://www.boost.org/), version 1.44 or higher.
   *  JsonCpp library (http://www.boost.org/), version 0.5.0 or higher.
-  *  cURL command line tool (http://curl.haxx.se/download.html).
-     It is a standard tool present in many modern systems and available in
-     standard repositories.
-     This tool is required solely for sending the network updates to Gephi
-     and does not affect any other functionalities of the tools.
-     Some versions of the cURL under Mac Os are known to cause problems.
+  *  cpp-netlib library (http://cpp-netlib.org), version 0.9.4 or higher.
   *  Gephi (https://gephi.org/), with installed plugin Graph Streaming API,
      it can be installed internally from Gephi
 

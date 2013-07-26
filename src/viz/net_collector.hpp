@@ -8,8 +8,8 @@
 #include <set>
 #include <vector>
 
-#include <pms/clock_collector.cpp>
-#include <viz/node.cpp>
+#include <pms/clock_collector.hpp>
+#include <viz/node.hpp>
 
 using namespace std;
 
@@ -39,6 +39,8 @@ public:
 	//void add_linkpack(T1 linkpack, string label, double r, double g, double b)
 	template <class T1>	
 	void add_linkpack (T1 linkpack, int scoretype=1) {
+      typedef typename T1::const_iterator ittype;
+      
 		vector<set<node_base>::iterator> toupdate(linkpack.size()); 
 		//double increment=1.0/(toupdate.size()-1);
 		double increment; //edge score increment
@@ -63,7 +65,6 @@ public:
 		// check if found tags has already been stored, if not then add
 		{
 			unsigned iupd=0;
-			typedef typename T1::const_iterator ittype;
 			for (ittype fp = linkpack.begin(); fp != linkpack.end(); ++fp) {
 				if (verbose==9) cout<<(*fp);
 				
@@ -155,7 +156,7 @@ public:
                   //TODO wrong i need to find element with the position, not with strength
                   // so probably weakest has to be a deque of structs...
                   {deque<unsigned>::iterator foundit=find( weakest.begin(), weakest.end(), (*toupdate[iupd]).pos);
-                  if (foundit!=weakest.end()) weakest.erase(foundit); }							
+                  if (foundit!=weakest.end()) weakest.erase(foundit); }				
                   
                   // in case of weakest empty find new weakest elements							
                   if (weakest.size()==0) {
@@ -182,17 +183,34 @@ public:
 	
 		//------------------------------------------------------------------
 		// now it's time to strengthen connections weights
-		if (toupdate.size()>0)
+		if (toupdate.size()>1)
 		{
 			for (vector<set<node_base>::iterator>::const_iterator i = toupdate.begin();
-			i != toupdate.end(); ++i)
-			for (vector<set<node_base>::iterator>::const_iterator j = toupdate.begin();
-			j != toupdate.end(); ++j) {
-				unsigned pos1=(**i).pos;
-				unsigned pos2=(**j).pos;
-				if (pos1!=pos2) sw[pos1][pos2]+=increment;
-				//sw[pos1][pos1]+=increment; // this is done before
-			}
+              i != toupdate.end(); i++) {
+            for (vector<set<node_base>::iterator>::const_iterator j = toupdate.begin();
+                 j != toupdate.end(); j++) {
+               unsigned pos1=(**i).pos;
+               unsigned pos2=(**j).pos;
+               // debugging
+               //string nm1=(**i).nm;
+               //string nm2=(**j).nm;
+               if (pos1>sw.size() || pos2>sw.size()) {
+                  for (ittype fp = linkpack.begin(); fp != linkpack.end(); ++fp) {
+                        cout<<(*fp)<<" ";
+                        cout.flush();
+                  }
+                  for (vector<set<node_base>::iterator>::const_iterator k = toupdate.begin();
+                     k != toupdate.end(); k++) {
+                        cout<<(**k).nm<<" "<<(**k).pos<<"|";
+                        cout.flush();
+                  }
+                  cout<<endl;
+               }
+               
+               if (pos1!=pos2) sw[pos1][pos2]+=increment;
+               //sw[pos1][pos1]+=increment; // this is done before
+            }
+         }
 		}
       
 		myclockcollector->collect("TTTTaddedtostored");

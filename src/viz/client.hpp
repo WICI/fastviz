@@ -29,17 +29,26 @@ public:
 	template <class TT0> void change_label(TT0 id) {produce_event("cl", id);}
 	template <class TT0> void delete_label(TT0 id) {produce_event_no_attributes("dl", id);}
 	
-	template <class TT0, class T2> void add_node(TT0 id, T2 &extattr) {produce_event("an", id, extattr);}
-	template <class TT0, class T2> void change_node(TT0 id, T2 &extattr) {produce_event("cn", id, extattr);}
-	template <class TT0, class T2> void delete_node(TT0 id, T2 &extattr) {produce_event("dn", id, extattr);}
+	template <class TT0, class T2> void add_node(TT0 id, T2 &extattr) 
+   {produce_event("an", id, extattr);}
+	template <class TT0, class T2> void change_node(TT0 id, T2 &extattr) 
+   {produce_event("cn", id, extattr);}
+	template <class TT0, class T2> void delete_node(TT0 id, T2 &extattr) 
+   {produce_event("dn", id, extattr);}
 	
-	template <class TT0, class T2> void add_edge(TT0 id, T2 &extattr) {produce_event("ae", id, extattr);}
-	template <class TT0, class T2> void change_edge(TT0 id, T2 &extattr) {produce_event("ce", id, extattr);}
-	template <class TT0, class T2> void delete_edge(TT0 id, T2 &extattr) {produce_event("de", id, extattr);}
+	template <class TT0, class T2> void add_edge(TT0 id, T2 &extattr) 
+   {produce_event("ae", id, extattr);}
+	template <class TT0, class T2> void change_edge(TT0 id, T2 &extattr) 
+   {produce_event("ce", id, extattr);}
+	template <class TT0, class T2> void delete_edge(TT0 id, T2 &extattr) 
+   {produce_event("de", id, extattr);}
 	
-	template <class TT0, class T2> void add_label(TT0 id, T2 &extattr) {produce_event("al", id, extattr);}
-	template <class TT0, class T2> void change_label(TT0 id, T2 &extattr) {produce_event("cl", id, extattr);}
-	template <class TT0, class T2> void delete_label(TT0 id, T2 &extattr) {produce_event("dl", id, extattr);}
+	template <class TT0, class T2> void add_label(TT0 id, T2 &extattr) 
+   {produce_event("al", id, extattr);}
+	template <class TT0, class T2> void change_label(TT0 id, T2 &extattr) 
+   {produce_event("cl", id, extattr);}
+	template <class TT0, class T2> void delete_label(TT0 id, T2 &extattr) 
+   {produce_event("dl", id, extattr);}
 	
 	/* attributes implemented with std::map (it's slower)
 	template <class TT1>

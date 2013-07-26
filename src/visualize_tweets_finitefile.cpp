@@ -20,14 +20,13 @@
 #include <util/time_checker.hpp>
 #include <util/pace_checker.hpp>
 
-#include <pms/clock_collector.cpp>
+#include <pms/clock_collector.hpp>
 #include <pms/time_checker_intervals.hpp>
 
-#include <viz/client.cpp>
-// #include <viz/client_gephi.cpp>
-#include <viz/client_gephi_light.cpp>
-#include <viz/net_collector.cpp>
-#include <viz/viz_selector.cpp>
+#include <viz/client.hpp>
+#include <viz/client_gephi.hpp>
+#include <viz/net_collector.hpp>
+#include <viz/viz_selector.hpp>
 
 using namespace std;
 namespace pt = boost::posix_time;
@@ -41,6 +40,8 @@ void handle_kill(int sig) {
    signal(SIGINT, SIG_DFL);
 }
 
+//TODO too much redundant freedom with types
+//TODO reduce it by removing unnecesary templates
 // structure to store pack of links
 typedef vector <string> linkpack_type;
 typedef set <string> nodes_set;
@@ -51,14 +52,18 @@ void get_linkpack( const char *bufch,
    istringstream bufis(bufch);
    bufis>>time;
    string node;
+   
+   // to assure no repetitions, also in case last field read twice
+   set<string> worepetitions;
    while (bufis.good()) {
       bufis>>node;
-      linkpack.push_back(node);
+      worepetitions.insert(node);
    }
+   linkpack.assign(worepetitions.begin(),worepetitions.end());
+   
    if (linkpack.size()<2) {
-      cout<<"Datafile has less than 3 collumns. Exiting..."<<endl;
-      cout<<"Last buffered line: "<<bufch<<endl;
-      exit(1);
+      cout<<"Line: "<<bufch<<endl;
+      cout<<" has has less than 3 collumns, skipping the line..."<<endl;
    }
 }
 
@@ -70,7 +75,7 @@ int do_filter( string input, string server, string output,
                int verbose,
                const unsigned maxstored, const unsigned maxvisualized,
                unsigned forgetevery, double forgetconst, 
-               double edgemin, string keyword,
+               double edgemin, string label1, string label2,
                unsigned timecontraction, unsigned fps, int scoretype
                ) {
    //++++++++++++++++++++ SYSTEM SIGNALS HANDLERS
@@ -104,7 +109,7 @@ int do_filter( string input, string server, string output,
    cout<<"  forgetevery: "<<forgetevery<<endl;
    cout<<"  forgetconst: "<<forgetconst<<endl;
    cout<<"  edgemin: "<<edgemin<<endl;
-   cout<<"  keyword: "<<keyword<<endl;
+   cout<<"  label2: "<<label2<<endl;
    cout<<"  timecontraction: "<<timecontraction<<endl;
    cout<<"  fps: "<<fps<<endl;
    
@@ -130,8 +135,7 @@ int do_filter( string input, string server, string output,
    //++++++++++++++++++++ SELECTORS AND VISUALIZERS CLASSES
    client_base *gc;
    if (server!="") 
-   // gc= new client_gephi(server,output);
-      gc= new client_gephi_light(server, output);
+      gc= new client_gephi(server,output);
    else 
       gc= new client_file(output);
    
@@ -140,8 +144,10 @@ int do_filter( string input, string server, string output,
    
    nets.push_back( new net_collector( maxstored, myclockcollector ) );
    viz1=new viz_selector( *nets[0], *gc, myclockcollector );
-   viz1->add_labels( pt::to_simple_string(pt::from_time_t(linktime)), 
-                     keyword, "WICI data challenge" );
+   
+   if (server=="") 
+      viz1->add_labels( pt::to_simple_string(pt::from_time_t(linktime)), 
+                        label1, label2, "WICI data challenge" );
    
    //++++++++++++++++++++ TIME TO START
    long total_read = 0, total_links = 0, total_malformed = 0;
@@ -229,9 +235,10 @@ int do_filter( string input, string server, string output,
       //=====================================================================
       // visualize selected set of nodes (creates data for a frame)
       //=====================================================================
-      viz1->change_label_datetime(
-         pt::to_simple_string(pt::from_time_t(long(ts))));
-      viz1->draw(maxvisualized, edgemin, verbose, keyword);
+      if (server=="") 
+         viz1->change_label_datetime(
+            pt::to_simple_string(pt::from_time_t(long(ts))));
+      viz1->draw(maxvisualized, edgemin, verbose, label2);
       
       // sleep if gephi server is specified to in between sent events
       if (server!="") {
@@ -279,7 +286,8 @@ int main(int argc, char** argv) {
       ("forgetevery", po::value<unsigned>()->default_value(10), "")
       ("forgetconst", po::value<double>()->default_value(0.99), "")
       ("edgemin", po::value<double>()->default_value(0.5), "")
-      ("keyword", po::value<string>()->default_value(""),"")
+      ("label1", po::value<string>()->default_value(""),"")
+      ("label2", po::value<string>()->default_value(""),"")
       ("timecontraction", po::value<unsigned>()->default_value(100), "")
       ("fps", po::value<unsigned>()->default_value(30), "")
       ("scoretype", po::value<int>()->default_value(1), "")
@@ -311,14 +319,15 @@ int main(int argc, char** argv) {
    unsigned forgetevery = vm["forgetevery"].as<unsigned>();
    double forgetconst = vm["forgetconst"].as<double>();
    double edgemin = vm["edgemin"].as<double>();
-   string keyword = vm["keyword"].as<string>();
+   string label1 = vm["label1"].as<string>();
+   string label2 = vm["label2"].as<string>();
    unsigned timecontraction = vm["timecontraction"].as<unsigned>();
    unsigned fps = vm["fps"].as<unsigned>();
    int scoretype = vm["scoretype"].as<int>();
   
    do_filter( input, server, output, verbose,
               maxstored, maxvisualized, 
-              forgetevery, forgetconst, edgemin, keyword, 
+              forgetevery, forgetconst, edgemin, label1, label2, 
               timecontraction, fps, scoretype
               );
    return 0;

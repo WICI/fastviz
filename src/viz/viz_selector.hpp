@@ -6,10 +6,10 @@
 #include <set>
 #include <vector>
 
-#include <pms/clock_collector.cpp>
-#include <viz/client.cpp>
-#include <viz/node.cpp>
-#include <viz/net_collector.cpp>
+#include <pms/clock_collector.hpp>
+#include <viz/client.hpp>
+#include <viz/node.hpp>
+#include <viz/net_collector.hpp>
 
 using namespace std;
 
@@ -19,14 +19,16 @@ public:
                       int verbose=0, string excluded="",
 							 double r=0.5, double g=0.5, double b=0.5) {};
 
-	void add_labels(string datetime="label not specified", string hashtag="label not specified", 
+	void add_labels(string datetime="label not specified",
+                   string label1="label not specified", 
+                   string label2="label not specified", 
 						 string producer="truthy.indiana.edu") {
 		oc->set_attributes( "label",datetime);
 		oc->add_label("datetime");
-		oc->set_attributes( "label","hashtag:", "x",5, "y",55, "size",50 );
-		oc->add_label("hashtag-intro");
-		oc->set_attributes( "label",hashtag, "x",5, "y",55+40, "size",50 );
-		oc->add_label("hashtag");
+		oc->set_attributes( "label",label1, "x",5, "y",55, "size",50 );
+		oc->add_label("label1");
+		oc->set_attributes( "label",label2, "x",5, "y",55+40, "size",50 );
+		oc->add_label("label2");
 		// uhm, it's strange to have these attribs here, since this is not generic, but well... 
 		// we're not sure what would be a better soulution, that's it
 		oc->set_attributes( "label",producer, "x",1050, "y",715, "size",20 );

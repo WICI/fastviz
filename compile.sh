@@ -29,6 +29,7 @@ else
 fi
 
 cd ./src
+make clean
 make visualize_tweets_finitefile || { echo 'Compilation failed' ; exit 1; }
 mv visualize_tweets_finitefile ..
 cd ..
