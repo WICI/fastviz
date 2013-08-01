@@ -22,7 +22,6 @@ real-word datasets illustrating the visualizations. In case of use we kindly
 request that you cite the publication describing the algorithm, the datasets
 and the visualizations as:
 
-()
 
 
 Dependencies
