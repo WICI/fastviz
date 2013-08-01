@@ -7,15 +7,23 @@ Introduction
 This project is a collection of two tools for visualization of large dynamic 
 networks, that perform the following functions, respectively:
 
-  *  From a chronological sequence of graph links in form of sdnet files
+  *  From a chronological sequence of graph links in form of ``sdnet`` files
      produce differential updates to a subgraph of the network delegated
-     fro visualization in form of JSON events.
+     for visualization in a format of JSON events.
      (``src/visualize_tweets_finitefile.cpp``)
-  *  Produce movies of evolving graphs from a feed of JSON events
+  *  Produce movies of evolving graphs from a feed of the JSON events
      (``scripts/DynamicGraph_wici.py``).
 
 In addition, the first tool can send the network updates directly to Gephi
 Streaming API, that visualizes them interactively.
+
+The tools are released under the GPL v3 license together with four 
+real-word datasets illustrating the visualizations. In case of use we kindly 
+request that you cite the publication describing the algorithm, the datasets
+and the visualizations as:
+
+()
+
 
 Dependencies
 ------------
@@ -90,17 +98,27 @@ parent directory of the project:
 Re-creating the demo movies
 ---------------------------
 
+The tools are released together with four datasets. For each of the datasets 
+a demo movie has been created using the tools:
+  *  Bin Laden Death on Twitter (http://youtu.be/3G2hFSiVkr0)
+  *  Super Bowl on Twitter (http://youtu.be/8GohDlc7P_A)
+  *  IMDB movie keywords (http://youtu.be/f8_dgXonkc0)
+  *  US patent title words (http://youtu.be/2lhEf7GtgT0)
+
+A more detailed description of the demo movies is available in the full publication:
+
+
 The script ``run.sh`` has been created to automatize the recreation of the 
 demo movie and to store the values of the parameters used for their generation. 
 
-To launch the first tool in order to convert the demo .sdnet files that are 
-located in ``data`` to ``json`` files:
+To launch the first tool in order to convert the demo ``sdnet`` files that are 
+located in the directory ``data`` to ``json`` files:
      
     ./run demo-diffnets
      
 To launch the second tool in order to create movies from the ``json``files 
-stored in the ``data`` subdir and save them as ``avi`` in the ``movies`` 
-subdir:
+stored in the directory ``data`` and save them as ``avi`` in the directory
+``movies``:
      
     ./run demo-movies
 
