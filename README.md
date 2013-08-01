@@ -98,8 +98,8 @@ parent directory of the project:
 Re-creating the demo movies
 ---------------------------
 
-The tools are released together with four datasets. For each of the datasets 
-a demo movie has been created using the tools:
+The tools are released together with four datasets that reside in the directory
+``data``. For each of the datasets a demo movie has been created using the tools:
   *  Bin Laden Death on Twitter (http://youtu.be/3G2hFSiVkr0)
   *  Super Bowl on Twitter (http://youtu.be/8GohDlc7P_A)
   *  IMDB movie keywords (http://youtu.be/f8_dgXonkc0)
