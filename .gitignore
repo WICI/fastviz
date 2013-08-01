@@ -1,2 +1,10 @@
 vars.sh
 *.o
+*.pyc
+*~
+std.out
+std.err
+logs
+movies
+vars_*.sh
+visualize_tweets_finitefile
