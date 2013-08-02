@@ -20,8 +20,7 @@ Streaming API, that visualizes them interactively.
 The tools are released under the GPL v3 license together with four 
 real-word datasets illustrating the visualizations. In case of use we kindly 
 request that you cite the publication describing the algorithm, the datasets
-and the visualizations as:
-
+and the visualizations (available at http://arxiv.org/abs/1308.0309).
 
 
 Dependencies
@@ -104,8 +103,8 @@ The tools are released together with four datasets that reside in the directory
   *  IMDB movie keywords (http://youtu.be/f8_dgXonkc0)
   *  US patent title words (http://youtu.be/2lhEf7GtgT0)
 
-A more detailed description of the demo movies is available in the full publication:
-
+A more detailed description of the demo movies is available in the full publication
+(available at http://arxiv.org/abs/1308.0309).
 
 The script ``run.sh`` has been created to automatize the recreation of the 
 demo movie and to store the values of the parameters used for their generation. 
