@@ -1,6 +1,7 @@
 /*
- * Filters desirable tweets, builds a network
- * out of chosen information and visualizes it.
+ * The main code of the first visualization tool that selects nodes
+ * with the highest scores in order to visualize them as a smaller
+ * subnetwork.
  */
 
 #include <iostream>
@@ -30,6 +31,7 @@
 
 using namespace std;
 namespace pt = boost::posix_time;
+
 
 // global variable used by signal handler
 bool keep_going = true;
@@ -282,13 +284,13 @@ int main(int argc, char** argv) {
       ("server", po::value<string>()->default_value(""), 
        "address to the updateGraph command of Gephi Streaming API server. If not provided then output is printed to file pointed as argument of --output option.")
       ("maxstored", po::value<unsigned long>()->default_value(2000), "")
-      ("maxvisualized", po::value<unsigned long>()->default_value(100), "")
+      ("maxvisualized", po::value<unsigned long>()->default_value(50), "")
       ("forgetevery", po::value<unsigned>()->default_value(10), "")
-      ("forgetconst", po::value<double>()->default_value(0.99), "")
-      ("edgemin", po::value<double>()->default_value(0.5), "")
+      ("forgetconst", po::value<double>()->default_value(0.75), "")
+      ("edgemin", po::value<double>()->default_value(0.95), "")
       ("label1", po::value<string>()->default_value(""),"")
       ("label2", po::value<string>()->default_value(""),"")
-      ("timecontraction", po::value<unsigned>()->default_value(100), "")
+      ("timecontraction", po::value<unsigned>()->default_value(3600), "")
       ("fps", po::value<unsigned>()->default_value(30), "")
       ("scoretype", po::value<int>()->default_value(1), "")
       ; 

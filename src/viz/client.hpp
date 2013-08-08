@@ -12,6 +12,11 @@
 using namespace std;
 using boost::lexical_cast;
 
+/*
+ * Save differential changes between consequtive states of a network
+ * in JSON format corresponding to the Gephi Streaming API format
+ */
+
 class client_base {
 public:	
 	

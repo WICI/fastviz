@@ -13,6 +13,10 @@
 
 using namespace std;
 
+/*
+ * Select for the visualization a subgraph of the buffered subraph
+ */
+
 class viz_selector_base {
 public:
 	virtual void draw (const unsigned maxvisualized, double edgeminweight, 
@@ -65,7 +69,7 @@ protected:
 			tmpnode.str=network->sw[i][i];
 			sntmp.push_back(tmpnode);
 		}
-		sort ( sntmp.begin(), sntmp.end(), compareNodeStrength<T0> );
+		sort ( sntmp.begin(), sntmp.end(), compare_node_strength<T0> );
 		// for (int i=0; i<sntmp.size(); i++) cout<<sntmp[i].nm<<" "<<network->sw[sntmp[i].pos][sntmp[i].pos]<<" ";
 		// cout<<endl;
 		
@@ -249,13 +253,13 @@ public:
 		if (verbose==5) {
 			for (int i=0; i<prevvisn.size(); i++) cout<<prevvisn[i].nm<<" "; cout<<endl;
 			for (int i=0; i<vntmp.size(); i++) cout<<vntmp[i].nm<<" "; cout<<endl;
-			for (list<nodeWithCounter>::iterator i=visn.begin(); i!=visn.end(); i++) cout<<(*i).nm<<" ";
+			for (list<node_with_counter>::iterator i=visn.begin(); i!=visn.end(); i++) cout<<(*i).nm<<" ";
 			cout<<endl;
 		}
 		myclockcollector->collect("TTTTadddelete_nodes");
 
 		change_nodes( network, visn, excluded );
-		change_edges( network, visn, eidm, extract_position<nodeWithCounter>, 
+		change_edges( network, visn, eidm, extract_position<node_with_counter>, 
 						  edgeminweight, 0.4, 0.6, 0.8 );
 		swap(prevvisn,vntmp);
 		myclockcollector->collect("TTTTupdate_nodes_edges");
@@ -270,12 +274,12 @@ private:
 	net_collector_base *network;
 	
 	vector <node_the> prevvisn;
-	list <nodeWithCounter> visn;
+	list <node_with_counter> visn;
 	vector <vector <unsigned long> > eidm;
    
    // this is purelly for the purpose of aggregated statistics
    // and slows down the algorithm, so it shouldn't be used in general
-   set <nodeWithCounter> allnodes_drawn;
+   set <node_with_counter> allnodes_drawn;
    
 	clock_collectors *myclockcollector;
 	

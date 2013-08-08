@@ -2,11 +2,10 @@
 #include <sstream>
 #include <iomanip>
 
-
 using namespace std;
 
-//////////////////////////////////////////////////////////////////////
 // formats a time
+
 string format_time(const unsigned long& time) {
    time_t a = time;
    const tm* t = gmtime(&a);

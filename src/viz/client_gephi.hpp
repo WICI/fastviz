@@ -13,6 +13,11 @@
 
 using namespace std;
 
+/*
+ * Send differential changes between consequtive states of a network
+ * in JSON format directly to the Gephi Streaming API
+ */
+
 class client_gephi : public client_base {
 public:
 	client_gephi()

@@ -4,6 +4,10 @@
 #include <string>
 using namespace std;
 
+/*
+ * Various node structures used in the main code
+ */
+
 struct node_base {
   string nm; //name
   unsigned pos; //position
@@ -62,14 +66,14 @@ struct node {
 //   void operator=(string &name) const {nm=name;}
 };
 
-struct nodeWithCounter:node {
+struct node_with_counter:node {
 	double counter;
 	
-	nodeWithCounter():node() {counter=0;}
-	nodeWithCounter(string name, unsigned position, double strength, 
+	node_with_counter():node() {counter=0;}
+	node_with_counter(string name, unsigned position, double strength, 
 						 double countervalue):node(name, position,strength)
 	{ counter=countervalue; }
-	nodeWithCounter(node_the &other) {
+	node_with_counter(node_the &other) {
 		nm=other.nm; pos=other.pos; str=other.str; counter=0;
 	}
 	

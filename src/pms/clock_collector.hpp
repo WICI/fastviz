@@ -14,6 +14,10 @@
 using namespace std;
 using boost::lexical_cast;
 
+// Calculate how much time has passed between consequtive measurements
+// Easy to use in loops to collect time spent in various parts of the loop
+
+
 struct clock_collector{
 	string first;
 	double second;

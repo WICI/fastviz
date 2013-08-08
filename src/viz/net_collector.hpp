@@ -13,6 +13,10 @@
 
 using namespace std;
 
+/*
+ * Buffer a subgraph of the full graph of edges provided as the input
+ */
+
 class net_collector_base {
 public:	
 	vector <string> snm;
