@@ -59,7 +59,7 @@ protected:
 	void select_nodes(net_collector_base *network, const unsigned maxvisualized, 
 							vector <T0> &vntmp, double edgeminweight, string excluded="" ) {
 		//TODO rewrite to a new container, which can be sorted with different keys
-		vector<T0> sntmp; //TODO this should be a list!!!
+		vector<T0> sntmp; //TODO this should be a list
 		T0 tmpnode;
 		for (int i=0; i<network->sw.size(); i++) {
 			//DANGER what happens when snm is not yet initialized (initialized
