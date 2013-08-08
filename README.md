@@ -98,8 +98,8 @@ Re-creating the demo movies
 
 The tools are released together with four datasets that reside in the directory
 ``data``. For each of the datasets a demo movie has been created using the tools:
-  *  Bin Laden Death on Twitter (http://youtu.be/3G2hFSiVkr0)
-  *  Super Bowl on Twitter (http://youtu.be/8GohDlc7P_A)
+  *  Bin Laden Death on Twitter (http://youtu.be/8GohDlc7P_A)
+  *  Super Bowl on Twitter (http://youtu.be/3G2hFSiVkr0)
   *  IMDB movie keywords (http://youtu.be/f8_dgXonkc0)
   *  US patent title words (http://youtu.be/2lhEf7GtgT0)
 
