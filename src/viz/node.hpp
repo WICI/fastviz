@@ -84,7 +84,7 @@ struct node_with_counter:node {
 
 
 template <class T0>
-bool compareNodeStrength ( T0 i, T0 j) { return (i.str<j.str); }
+bool compare_node_strength ( T0 i, T0 j) { return (i.str<j.str); }
 
 
 #endif

@@ -92,6 +92,17 @@ parent directory of the project:
 
     python scripts/DynamicGraph_wici.py data/test.json
 
+Input format
+------------
+The dynamic network that is given as the input to the algorithm has to be unweigthed
+but can have multiple edges. The input file has to be sorted in chronological order
+with the epoch time used as time stamps. The input file has the following format for
+each of its lines:
+    t1 n1 n2
+    t2 n1 n3 n4
+    ...
+Where t1 is for time stamp 1, n1 stands for node 1, and n2 stands for node 2, etc.
+
 
 Re-creating the demo movies
 ---------------------------
