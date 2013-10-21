@@ -11,7 +11,7 @@ CXX = g++
 RM = /bin/rm
 
 # -Wall
-CXXFLAGS = -O3 -I. -I$(BOOST_SRC) -I$(CPPNET_SRC) -I $(JSON_SRC)
+CXXFLAGS = -O3 -I. -I$(BOOST_SRC) -I$(CPPNET_SRC) -I $(JSON_SRC) -pthread
 
 LDFLAGS = -L$(BOOST_BIN) -Wl,-rpath $(BOOST_BIN) \
           -L$(JSON_BIN) -Wl,-rpath $(JSON_BIN) \
@@ -21,7 +21,7 @@ LDLIBS  = -lboost_program_options -lboost_filesystem -lboost_regex -lboost_chron
           -lboost_date_time -lboost_system -lboost_thread \
           -lcppnetlib-client-connections -lcppnetlib-uri \
           -lcppnetlib-server-parsers -lssl -lcrypto \
-          -l$(JSON_LIBMT)
+          -l$(JSON_LIBMT) -lm
 
 OBJS =	util/format_time.o util/pace_checker.o
 # 	viz/net_collector.o viz/viz_selector.o viz/node.o \
