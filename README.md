@@ -128,13 +128,13 @@ demo movie and to store the values of the parameters used for their generation.
 To launch the first tool in order to convert the demo ``sdnet`` files that are 
 located in the directory ``data`` to ``json`` files:
      
-    ./run demo-diffnets
+    ./run.sh demo-diffnets
      
 To launch the second tool in order to create movies from the ``json``files 
 stored in the directory ``data`` and save them as ``avi`` in the directory
 ``movies``:
      
-    ./run demo-movies
+    ./run.sh demo-movies
 
 
 Launching interactive visualizations
@@ -152,7 +152,7 @@ graph layout running (e.g. Fruchterman) in the panel called
 To launch stream the visualization directly to Gephi for the selected 
 ``json`` file:
      
-    ./run gephi json_file server_ip_address time_contraction
+    ./run.sh gephi json_file server_ip_address time_contraction
      
 The parameter time_contraction is important here. If is low, e.g. 100, 
 for a dataset that has a time span of 100 years, then the visualization 
