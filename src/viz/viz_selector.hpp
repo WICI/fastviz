@@ -1,3 +1,7 @@
+/*
+ * Select for the visualization a subgraph of the buffered subraph
+ */
+
 #ifndef VIZ_VIZ_SELECTOR_HPP
 #define VIZ_VIZ_SELECTOR_HPP
 
@@ -13,20 +17,16 @@
 
 using namespace std;
 
-/*
- * Select for the visualization a subgraph of the buffered subraph
- */
-
 class viz_selector_base {
 public:
 	virtual void draw (const unsigned maxvisualized, double edgeminweight, 
                       int verbose=0, string excluded="",
 							 double r=0.5, double g=0.5, double b=0.5) {};
 
-	void add_labels(string datetime="label not specified",
-                   string label1="label not specified", 
-                   string label2="label not specified", 
-						 string producer="truthy.indiana.edu") {
+	void add_labels(string datetime="",
+                   string label1="", 
+                   string label2="", 
+						 string producer="") {
 		oc->set_attributes( "label",datetime);
 		oc->add_label("datetime");
 		oc->set_attributes( "label",label1, "x",5, "y",55, "size",50 );
@@ -61,16 +61,16 @@ protected:
 		//TODO rewrite to a new container, which can be sorted with different keys
 		vector<T0> sntmp; //TODO this should be a list
 		T0 tmpnode;
-		for (int i=0; i<network->sw.size(); i++) {
-			//DANGER what happens when snm is not yet initialized (initialized
+		for (int i=0; i<network->net.size(); i++) {
+			//DANGER what happens when names is not yet initialized (initialized
          // with default values), e.g. when number of stored nodes is low
-         tmpnode.nm=network->snm[i];
+         tmpnode.nm=network->names[i];
 			tmpnode.pos=i;
-			tmpnode.str=network->sw[i][i];
+			tmpnode.str=network->net[i][i];
 			sntmp.push_back(tmpnode);
 		}
 		sort ( sntmp.begin(), sntmp.end(), compare_node_strength<T0> );
-		// for (int i=0; i<sntmp.size(); i++) cout<<sntmp[i].nm<<" "<<network->sw[sntmp[i].pos][sntmp[i].pos]<<" ";
+		// for (int i=0; i<sntmp.size(); i++) cout<<sntmp[i].nm<<" "<<network->net[sntmp[i].pos][sntmp[i].pos]<<" ";
 		// cout<<endl;
 		
 		// select strongest and filter out singletons, and late excluded node
@@ -82,7 +82,7 @@ protected:
 			//double str=0;
 			int edges=0;
 			for (int j=0; j<vnstrongest.size(); j++) if (i!=j) edges+=(
-				network->sw[vnstrongest[i].pos][vnstrongest[j].pos]
+				network->net[vnstrongest[i].pos][vnstrongest[j].pos]
 				>
 				edgeminweight
 				);
@@ -95,7 +95,7 @@ protected:
 	
    
    // clears ids of the edges removed from the visualization
-   // eidm is a matrix of size of sw matrix, to save processor time,
+   // eidm is a matrix of size of net matrix, to save processor time,
    // probably it could be implemented differently, no it's memory expensive
 	template <class T0, class T1>
 	static void clean_edgeids(T0 &prevvisn, T1 &eidm, typename T0::iterator &node_deleted) {
@@ -166,12 +166,12 @@ protected:
 			if (i->nm!=excluded) {
 				// layout - red/blue
 				//oc->set_attributes( "r",(*i).counter, "g",0.5, "b",1.4999-(*i).counter,
-				//						 "size",5*sqrt(network->sw[(*i).pos][(*i).pos]) );
+				//						 "size",5*sqrt(network->net[(*i).pos][(*i).pos]) );
 				// layout - yellow/blue
 				//oc->set_attributes( "r",(*i).counter, "g",(*i).counter, "b",2-2*(*i).counter,
-				//						  "size",5*sqrt(network->sw[(*i).pos][(*i).pos]) );
+				//						  "size",5*sqrt(network->net[(*i).pos][(*i).pos]) );
 				oc->set_attributes( "r",0.0, "g",0.2, "b",0.8,
-										  "size",5*sqrt(network->sw[(*i).pos][(*i).pos]) );
+										  "size",5*sqrt(network->net[(*i).pos][(*i).pos]) );
 			}
 			//else {oc->set_attributes( "r",1, "g",0.5, "b",0.5, "size",5*6 );}
 			oc->change_node((*i).nm);
@@ -192,15 +192,15 @@ protected:
 		typedef typename T0::iterator itype;
 		for (itype i=visn.begin(); i!=visn.end(); i++)
 			for (itype j=visn.begin(); j!=visn.end(); j++) {
-				if (network->sw[extractpos(*i)][extractpos(*j)]>edgeminweight) if (i!=j) {
+				if (network->net[extractpos(*i)][extractpos(*j)]>edgeminweight) if (i!=j) {
 					if (eidm[extractpos(*i)][extractpos(*j)]) {
-						oc->set_attributes( "weight",network->sw[extractpos(*i)][extractpos(*j)], 
+						oc->set_attributes( "weight",network->net[extractpos(*i)][extractpos(*j)], 
 							"r",r, "g",g, "b",b );
 						oc->change_edge( eidm[extractpos(*i)][extractpos(*j)] );
 					}
 					else {
-						oc->set_attributes( "source",(*i).nm, "target",network->snm[extractpos(*j)],
-												  "directed",false, "weight",network->sw[extractpos(*i)][extractpos(*j)],
+						oc->set_attributes( "source",(*i).nm, "target",network->names[extractpos(*j)],
+												  "directed",false, "weight",network->net[extractpos(*i)][extractpos(*j)],
 												  "r",r, "g",g, "b",b );
 						oc->add_edge( eid );
 						eidm[extractpos(*i)][extractpos(*j)]=eid;
@@ -218,7 +218,7 @@ class viz_selector: public viz_selector_base {
 public:
    
 	viz_selector (net_collector_base &mynet, client_base &client, clock_collectors &mycc)
-		:eidm(mynet.sw.size(), vector <unsigned long> (mynet.sw.size(),0))
+		:eidm(mynet.net.size(), vector <unsigned long> (mynet.net.size(),0))
 	{
 		network=&mynet;
 		oc=&client;

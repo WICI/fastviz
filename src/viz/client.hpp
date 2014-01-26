@@ -1,3 +1,8 @@
+/*
+ * Save differential changes between consequtive states of a network
+ * in JSON format corresponding to the Gephi Streaming API format
+ */
+
 #ifndef VIZ_CLIENT_HPP
 #define VIZ_CLIENT_HPP
 
@@ -12,10 +17,6 @@
 using namespace std;
 using boost::lexical_cast;
 
-/*
- * Save differential changes between consequtive states of a network
- * in JSON format corresponding to the Gephi Streaming API format
- */
 
 class client_base {
 public:	

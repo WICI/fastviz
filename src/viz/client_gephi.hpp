@@ -1,3 +1,8 @@
+/*
+ * Sends differential changes between consequtive states of a network
+ * in JSON format directly to the Gephi Streaming API
+ */
+
 #ifndef VIZ_CLIENT_GEPHI_HPP
 #define VIZ_CLIENT_GEPHI_HPP
 
@@ -13,10 +18,6 @@
 
 using namespace std;
 
-/*
- * Send differential changes between consequtive states of a network
- * in JSON format directly to the Gephi Streaming API
- */
 
 class client_gephi : public client_base {
 public:

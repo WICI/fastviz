@@ -32,8 +32,9 @@
 using namespace std;
 namespace pt = boost::posix_time;
 
-
+//=====================================================================
 // global variable used by signal handler
+//=====================================================================
 bool keep_going = true;
 
 void handle_kill(int sig) {
@@ -42,26 +43,22 @@ void handle_kill(int sig) {
    signal(SIGINT, SIG_DFL);
 }
 
-//TODO too much redundant freedom with types
-//TODO reduce it by removing unnecesary templates
-// structure to store pack of links
-typedef vector <string> linkpack_type;
-typedef set <string> nodes_set;
-
+//=====================================================================
 // loads a pack of links from a line of file
+//=====================================================================
 void get_linkpack( const char *bufch, 
-                   linkpack_type &linkpack, time_t &time ) {
+                   vector <string> &linkpack, time_t &time ) {
    istringstream bufis(bufch);
    bufis>>time;
    string node;
    
-   // to assure no repetitions, also in case last field read twice
-   set<string> worepetitions;
+   // to assure no unique, also in case last field read twice
+   set<string> unique;
    while (bufis.good()) {
       bufis>>node;
-      worepetitions.insert(node);
+      unique.insert(node);
    }
-   linkpack.assign(worepetitions.begin(),worepetitions.end());
+   linkpack.assign(unique.begin(),unique.end());
    
    if (linkpack.size()<2) {
       cout<<"Line: "<<bufch<<endl;
@@ -69,10 +66,12 @@ void get_linkpack( const char *bufch,
    }
 }
 
-// main, reads sequentially lines of the input files
+//=====================================================================
+// the main function, reads sequentially lines of the input files
 // output differential network files
 // either to the output file, or to the gephi server
 // if verbose>0 gives extra statics on the network reduction
+//=====================================================================
 int do_filter( string input, string server, string output, 
                int verbose,
                const unsigned maxstored, const unsigned maxvisualized,
@@ -80,13 +79,15 @@ int do_filter( string input, string server, string output,
                double edgemin, string label1, string label2,
                unsigned timecontraction, unsigned fps, int scoretype
                ) {
-   //++++++++++++++++++++ SYSTEM SIGNALS HANDLERS
+   // system signals handlers
    signal(SIGINT, handle_kill);
    
-   //++++++++++++++++++++ LOAD DATA
+   //=====================================================================
+   // load data
+   //=====================================================================
    time_t linktime, prev_linktime;
-   linkpack_type linkpack;
-   nodes_set all_nodes; // this is solely for outputting statistics
+   vector <string> linkpack;
+   set <string> all_nodes; // used solely for gathering additional statistics
    
    ifstream inputnet(input.c_str());
    {static char bufch[100000];
@@ -118,14 +119,17 @@ int do_filter( string input, string server, string output,
    cout<<"Derived:"<<endl;
    cout<<"  interval: "<<upd_interval<<endl;
    
-   
-   //++++++++++++++++++++ TIME CHECKERS INITS
+   //=====================================================================
+   // time checkers inits
+   //=====================================================================
    time_checker stats_checker(time(0), 10);
    pace_checker pace_check(linktime);
    pt::time_duration real_interval=microseconds(1000000/fps); //in microseconds
    time_checker_intervals_micro videotime_checker(pt::microsec_clock::local_time(), real_interval);
    
-   //++++++++++++++++++++ CPU CLOCK COLLECTORS
+   //=====================================================================
+   // cpu clock collectors
+   //=====================================================================
    clock_collectors myclockcollector;
    myclockcollector.addnamedcollectors(11, "TTTTdatareading",
       "TTTTadd_linkpack",    "TTTThashtagextractor",
@@ -134,24 +138,26 @@ int do_filter( string input, string server, string output,
       "TTTTselect_nodes", "TTTTadddelete_nodes",
       "TTTTupdate_nodes_edges", "TTTTgcupdate");
    
-   //++++++++++++++++++++ SELECTORS AND VISUALIZERS CLASSES
-   client_base *gc;
-   if (server!="") 
-      gc= new client_gephi(server,output);
-   else 
-      gc= new client_file(output);
+   //=====================================================================
+   // selectors and visualizers classes
+   //=====================================================================
+   client_base *myoutput;
+   if (server!="") myoutput=new client_gephi(server,output);
+   else myoutput=new client_file(output);
    
-   vector <net_collector*> nets; // could be more than one networks
-   viz_selector_base *viz1;
+   net_collector *mynet;
+   viz_selector_base *myviz;
    
-   nets.push_back( new net_collector( maxstored, myclockcollector ) );
-   viz1=new viz_selector( *nets[0], *gc, myclockcollector );
+   mynet=new net_collector( maxstored, myclockcollector );
+   myviz=new viz_selector( *mynet, *myoutput, myclockcollector );
    
    if (server=="") 
-      viz1->add_labels( pt::to_simple_string(pt::from_time_t(linktime)), 
+      myviz->add_labels( pt::to_simple_string(pt::from_time_t(linktime)), 
                         label1, label2, "WICI data challenge" );
    
-   //++++++++++++++++++++ TIME TO START
+   //=====================================================================
+   // time to start
+   //=====================================================================
    long total_read = 0, total_links = 0, total_malformed = 0;
    int line=1, frame=0;
    long ts;
@@ -181,7 +187,7 @@ int do_filter( string input, string server, string output,
             myclockcollector.collect("TTTTadd_linkpack");
             total_links+=(linkpack.size()-1)*linkpack.size();
             if (verbose==9) cout<<total_read-1;
-            nets[0]->add_linkpack( linkpack, scoretype );
+            if ( linkpack.size()>1 ) mynet->add_linkpack( linkpack, scoretype );
          }
          if (verbose>1) {
             all_nodes.insert( linkpack.begin(), linkpack.end() );
@@ -231,16 +237,16 @@ int do_filter( string input, string server, string output,
       // forgetting
       //=====================================================================
       //if (total_links%10==0)
-      if (frame%forgetevery==0) nets[0]->forget_connections(forgetconst);
+      if (frame%forgetevery==0) mynet->forget_connections(forgetconst);
       myclockcollector.collect("TTTTnonmatchingkeywords+forgetting");
       
       //=====================================================================
       // visualize selected set of nodes (creates data for a frame)
       //=====================================================================
       if (server=="") 
-         viz1->change_label_datetime(
+         myviz->change_label_datetime(
             pt::to_simple_string(pt::from_time_t(long(ts))));
-      viz1->draw(maxvisualized, edgemin, verbose, label2);
+      myviz->draw(maxvisualized, edgemin, verbose, label2);
       
       // sleep if gephi server is specified to in between sent events
       if (server!="") {
@@ -260,7 +266,7 @@ int do_filter( string input, string server, string output,
        <<", frames generated: "<<frame<<endl;
    if (verbose>0)
       cout<<"Total nodes encountered: "<<all_nodes.size()
-          <<", total nodes drawn: "<<viz1->get_how_many_drawn()<<endl;
+          <<", total nodes drawn: "<<myviz->get_how_many_drawn()<<endl;
    
    if (verbose>3) {
       myclockcollector.printall();
@@ -270,6 +276,9 @@ int do_filter( string input, string server, string output,
    return total_links;
 }
 
+//=====================================================================
+// main with program options
+//=====================================================================
 int main(int argc, char** argv) {
    namespace po = boost::program_options;
    po::options_description desc("Allowed options");

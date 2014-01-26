@@ -1,12 +1,12 @@
+/*
+ * Various node structures used in the main code
+ */
+
 #ifndef VIZ_NODE_HPP
 #define VIZ_NODE_HPP
 
 #include <string>
 using namespace std;
-
-/*
- * Various node structures used in the main code
- */
 
 struct node_base {
   string nm; //name
