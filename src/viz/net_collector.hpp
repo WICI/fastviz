@@ -14,32 +14,24 @@
 
 #include <pms/clock_collector.hpp>
 #include <viz/node.hpp>
+#include <viz/net_collector_base.hpp>
 
 using namespace std;
-
-class net_collector_base {
-public:	
-	vector <string> names;
-	vector <vector <double> > net;
-	
-	net_collector_base (const unsigned maxstored)
-		:names(maxstored), net(maxstored, vector <double> (maxstored,0)) {
-	}
-};
 
 class net_collector : public net_collector_base {
 public:
 	
 	net_collector (const unsigned maxstored, clock_collectors &mycc)
 		:net_collector_base(maxstored) {
-			minstr=1e100; nstored=0;
-			myclockcollector=&mycc;
+			minstr=1e100; 
+			nstored=0;
 			verbose=1;
+			myclockcollector=&mycc;
 	}
 	
-	template <class T1>	
-	void add_linkpack (T1 linkpack, int scoretype=1) {
-		typedef typename T1::const_iterator ittype;
+	void add_linkpack (vector <string> &linkpack, double scoretype=1, 
+			double weight=1.0) {
+		typedef typename vector <string>::const_iterator ittype;
 		
 		double m=linkpack.size();
 		vector<set<node_base>::iterator> toupdate(m);
@@ -101,8 +93,8 @@ public:
 						// update matrix of weights
 						for (unsigned j=0; j<net.size(); j++) {
 							if (net[j][node.pos]) {
-								net[j][j]-=net[j][node.pos];
-								if (net[j][j]<minstr) minstr=net[j][j];
+								//net[j][j]-=net[j][node.pos];
+								//if (net[j][j]<minstr) refresh_weakest();
 								net[j][node.pos]=0;
 								net[node.pos][j]=0;
 							}
@@ -176,9 +168,17 @@ public:
 		myclockcollector->collect("TTTTaddedtostored");
 		
 		//boost::this_thread::sleep(boost::posix_time::milliseconds(p_sleep));
-	}
+	}	
 	
 	//------------------------------------------------------------------
+	// forgetting
+	void forget_connections (double forgetfactor) {
+		for (int i=0; i<net.size(); i++) for (int j=0; j<net[i].size(); j++)
+			if (net[i][j]!=0) net[i][j]*=forgetfactor;
+	}
+	
+private:
+
 	// in case of weakest empty find new weakest elements 
 	void refresh_weakest() {
 		if (weakest.size()==0) {
@@ -196,15 +196,7 @@ public:
 			minstr=currminstr;
 		}
 	}
-	
-	//------------------------------------------------------------------
-	// forgetting
-	void forget_connections (double forgetfactor) {
-		for (int i=0; i<net.size(); i++) for (int j=0; j<net[i].size(); j++)
-			if (net[i][j]!=0) net[i][j]*=forgetfactor;
-	}
-	
-private:
+
 	set <node_base> stored; //stored nodes
 	deque <unsigned> weakest;
 	

@@ -11,7 +11,7 @@ CXX = g++
 RM = /bin/rm
 
 # -Wall
-CXXFLAGS = -O3 -I. -I$(BOOST_SRC) -I$(CPPNET_SRC) -I $(JSON_SRC) -pthread
+CXXFLAGS = -O3 -std=c++11 -I. -I$(BOOST_SRC) -I$(CPPNET_SRC) -I $(JSON_SRC) -pthread
 
 LDFLAGS = -L$(BOOST_BIN) -Wl,-rpath $(BOOST_BIN) \
           -L$(JSON_BIN) -Wl,-rpath $(JSON_BIN) \
@@ -23,16 +23,17 @@ LDLIBS  = -lboost_program_options -lboost_filesystem -lboost_regex -lboost_chron
           -lcppnetlib-server-parsers -lssl -lcrypto \
           -l$(JSON_LIBMT) -lm
 
-OBJS =	util/format_time.o util/pace_checker.o
+OBJS =	util/format_time.o util/pace_checker.o \
+			viz/net_collector_timewindow.o viz/link.o
 # 	viz/net_collector.o viz/viz_selector.o viz/node.o \
 # 	viz/client.o viz/client_gephi_light.o \
 # 	viz/client_gephi.o
 
-all: $(OBJS) visualize_tweets_finitefile
+objs: $(OBJS)
 
 visualize_tweets_finitefile: $(OBJS)
 
-test: $(OBJS)
+all: $(OBJS) visualize_tweets_finitefile
 
 clean:
 	find . -name '*.o' -delete

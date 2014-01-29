@@ -20,8 +20,8 @@ using namespace std;
 class viz_selector_base {
 public:
 	virtual void draw (const unsigned maxvisualized, double edgeminweight, 
-                      int verbose=0, string excluded="",
-							 double r=0.5, double g=0.5, double b=0.5) {};
+                      string excluded="",
+							 double r=0.5, double g=0.5, double b=0.5) = 0;
 
 	void add_labels(string datetime="",
                    string label1="", 
@@ -33,8 +33,6 @@ public:
 		oc->add_label("label1");
 		oc->set_attributes( "label",label2, "x",5, "y",55+40, "size",50 );
 		oc->add_label("label2");
-		// uhm, it's strange to have these attribs here, since this is not generic, but well... 
-		// we're not sure what would be a better soulution, that's it
 		oc->set_attributes( "label",producer, "x",1050, "y",715, "size",20 );
 		oc->add_label("producer");
 	}
@@ -44,49 +42,55 @@ public:
 		oc->change_label("datetime");
 	}
 	
-   // this is purelly for the purpose of aggregated statistics
-   // and slows down the algorithm, so it shouldn't be used in general
-   virtual long get_how_many_drawn() {
-      return -1;
-   }
+   // get aggregated statistics
+   virtual long get_how_many_drawn()  = 0;
+	unsigned get_nodes_visualized(){ return nodes_visualized; }
+	unsigned get_nodes_not_visualized(){ return nodes_not_visualized; }
+	unsigned get_total_score(){ return total_score; }
    
 protected:
-	client_base *oc; // output client
-	unsigned eid;
 	
    // create a list of all stored nodes sorted by strength and select the strongest
-	template <class T0> //TODO is template here needed?
+	template <class T0>
 	void select_nodes(net_collector_base *network, const unsigned maxvisualized, 
-							vector <T0> &vntmp, double edgeminweight, string excluded="" ) {
-		//TODO rewrite to a new container, which can be sorted with different keys
-		vector<T0> sntmp; //TODO this should be a list
+							vector <T0> &vntmp, double edgeminweight, 
+							string excluded="" ) {
+		// get all buffered nodes and sort them by strength
+		vector<T0> bnodes;
 		T0 tmpnode;
-		for (int i=0; i<network->net.size(); i++) {
-			//DANGER what happens when names is not yet initialized (initialized
-         // with default values), e.g. when number of stored nodes is low
+		for (int i=0; i<network->maxstored; i++) if (network->names[i]!="") {
          tmpnode.nm=network->names[i];
 			tmpnode.pos=i;
 			tmpnode.str=network->net[i][i];
-			sntmp.push_back(tmpnode);
+			bnodes.push_back(tmpnode);
 		}
-		sort ( sntmp.begin(), sntmp.end(), compare_node_strength<T0> );
-		// for (int i=0; i<sntmp.size(); i++) cout<<sntmp[i].nm<<" "<<network->net[sntmp[i].pos][sntmp[i].pos]<<" ";
-		// cout<<endl;
-		
-		// select strongest and filter out singletons, and late excluded node
+		sort ( bnodes.begin(), bnodes.end(), compare_node_strength<T0> );
+		if (verbose>4){
+			for (int i=0; i<bnodes.size(); i++)
+				cout<<bnodes[i].nm<<" "<<network->net[bnodes[i].pos][bnodes[i].pos]<<" ";
+			cout<<endl;
+		}
+
+		// select strongest nodes
 		unsigned currvisualized;
-		if (sntmp.size()>maxvisualized) currvisualized=maxvisualized;
-		else currvisualized=sntmp.size();
-		{vector <T0> vnstrongest(sntmp.end()-currvisualized,sntmp.end());
-		for (int i=0; i<vnstrongest.size(); i++) {
-			//double str=0;
+		if (bnodes.size()>maxvisualized) currvisualized=maxvisualized;
+		else currvisualized=bnodes.size();
+		{vector <T0> bnstrongest(bnodes.end()-currvisualized,bnodes.end());
+		
+		// filter out singletons, and late excluded node
+		nodes_visualized=nodes_not_visualized=total_score=0;
+		for (int i=0; i<bnstrongest.size(); i++) {
 			int edges=0;
-			for (int j=0; j<vnstrongest.size(); j++) if (i!=j) edges+=(
-				network->net[vnstrongest[i].pos][vnstrongest[j].pos]
-				>
-				edgeminweight
-				);
-			if (edges>0 && vnstrongest[i].nm!=excluded ) vntmp.push_back(vnstrongest[i]);
+			for (int j=0; j<bnstrongest.size(); j++) if (i!=j) { 
+				double weight = network->net[bnstrongest[i].pos][bnstrongest[j].pos];
+				total_score+=weight;
+				edges+=(weight>edgeminweight);
+			}
+			if (edges>0 && bnstrongest[i].nm!=excluded ) {
+				vntmp.push_back(bnstrongest[i]);
+				nodes_visualized++;
+			}
+			else nodes_not_visualized++;
 		}}
 		
 		// sort according to the name in order to compare with previous state
@@ -96,7 +100,7 @@ protected:
    
    // clears ids of the edges removed from the visualization
    // eidm is a matrix of size of net matrix, to save processor time,
-   // probably it could be implemented differently, no it's memory expensive
+   // it could be implemented differently, now it's very memory expensive
 	template <class T0, class T1>
 	static void clean_edgeids(T0 &prevvisn, T1 &eidm, typename T0::iterator &node_deleted) {
 		for (int i=0; i<prevvisn.size(); i++) {
@@ -105,10 +109,12 @@ protected:
 		}
 	}
 	
-   // makes differential comparison of what has been visualized and what will
+   // makes differential comparison of prevvisn and vntmp, 
+   // namely of what has been visualized and what will
    // be visualized, and sends the changes to the output client
 	template <class T0, class T1, class T2, class F>
-	void adddelete_nodes(T0 &prevvisn, T0 &vntmp, T1 &visn, T2 &eidm, F f ) {
+	void adddelete_nodes(T0 &prevvisn, T0 &vntmp, T1 &visn, T2 &eidm, 
+			F cleaner_function ) {
 		typedef typename T0::iterator ittype0;
 		typedef typename T1::iterator ittype1;
 		typedef typename T1::value_type vtype1;
@@ -124,7 +130,7 @@ protected:
          // remove node from visualization
 			if ((*first1).nm<(*first2).nm) {
 				oc->delete_node((*first1).nm);
-				f(prevvisn, eidm, first1);
+				cleaner_function(prevvisn, eidm, first1);
 				{ittype1 foundit=find(visn.begin(),visn.end(),(*first1).nm);
 				assert(foundit!=visn.end()); visn.erase(foundit);}
 				++first1;
@@ -144,7 +150,7 @@ protected:
       // remove node from visualization
 		while (first1!=last1) {
 			oc->delete_node((*first1).nm);
-			f(prevvisn, eidm, first1);
+			cleaner_function(prevvisn, eidm, first1);
 			{ittype1 foundit=find(visn.begin(),visn.end(),(*first1).nm);
 			assert(foundit!=visn.end()); visn.erase(foundit);}
 			++first1;
@@ -210,50 +216,54 @@ protected:
 				}
 			}
 	}
-	
+
+	client_base *oc; // output client
+	unsigned eid;
+
+protected:
+	unsigned verbose;
+
+private:
+	unsigned nodes_visualized, nodes_not_visualized;
+	double total_score;
 };
 
 
 class viz_selector: public viz_selector_base {
 public:
    
-	viz_selector (net_collector_base &mynet, client_base &client, clock_collectors &mycc)
-		:eidm(mynet.net.size(), vector <unsigned long> (mynet.net.size(),0))
-	{
+	viz_selector (net_collector_base &mynet, client_base &client, 
+			clock_collectors &mycc, int verbose) : 
+			eidm(mynet.maxstored, vector <unsigned long> (mynet.maxstored,0)) {
 		network=&mynet;
 		oc=&client;
 		myclockcollector=&mycc;
 		eid=1;
-		verbose=1;
+		this->verbose=verbose;
 	}
 	
-   // this is purelly for the purpose of aggregated statistics
-   // and slows down the algorithm, so it shouldn't be used in general
-   long get_how_many_drawn() {
-      return allnodes_drawn.size();
-   }
-   
-	void change_net(net_collector_base &mynet) {
-		network=&mynet;
-	}
 	
    // the main method, calling all the private methods
 	void draw (const unsigned maxvisualized, double edgeminweight, 
-               int verbose=0, string excluded="", 
-					double r=0.5, double g=0.5, double b=0.5) {
+               string excluded="", double r=0.5, double g=0.5, double b=0.5) {
 		if (verbose==5) cout<<"___________________________________________"<<endl;
+		
+		// selects nodes from network, removes singletons, sorts them, and 
+		// puts them into vntmp
 		vector<node_the> vntmp;
 		select_nodes(network, maxvisualized, vntmp, edgeminweight, excluded );
 		myclockcollector->collect("TTTTselect_nodes");
 		
-		//TODO I would prefer to give the function as argument without a need
-		// of specifying the template, but I'm not sure if it's possible
+		// no idea what this shit does
 		adddelete_nodes(prevvisn, vntmp, visn, eidm, 
 			clean_edgeids < vector <node_the>, vector <vector <unsigned long> > > );
 		if (verbose==5) {
-			for (int i=0; i<prevvisn.size(); i++) cout<<prevvisn[i].nm<<" "; cout<<endl;
-			for (int i=0; i<vntmp.size(); i++) cout<<vntmp[i].nm<<" "; cout<<endl;
-			for (list<node_with_counter>::iterator i=visn.begin(); i!=visn.end(); i++) cout<<(*i).nm<<" ";
+			for (int i=0; i<prevvisn.size(); i++) cout<<prevvisn[i].nm<<" "; 
+				cout<<endl;
+			for (int i=0; i<vntmp.size(); i++) cout<<vntmp[i].nm<<" "; 
+				cout<<endl;
+			for (list<node_with_counter>::iterator i=visn.begin(); i!=visn.end(); i++) 
+				cout<<(*i).nm<<" ";
 			cout<<endl;
 		}
 		myclockcollector->collect("TTTTadddelete_nodes");
@@ -270,20 +280,21 @@ public:
 		myclockcollector->collect("TTTTgcupdate");
 	}
 	
+   // get aggregated statistics
+   long get_how_many_drawn() { return allnodes_drawn.size(); }
+
 private:
 	net_collector_base *network;
 	
+   // main containers
 	vector <node_the> prevvisn;
 	list <node_with_counter> visn;
 	vector <vector <unsigned long> > eidm;
    
-   // this is purelly for the purpose of aggregated statistics
-   // and slows down the algorithm, so it shouldn't be used in general
+   // used only for the purpose of aggregated statistics
    set <node_with_counter> allnodes_drawn;
    
 	clock_collectors *myclockcollector;
-	
-	unsigned verbose;
 };
 
 

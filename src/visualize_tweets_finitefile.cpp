@@ -27,6 +27,7 @@
 #include <viz/client.hpp>
 #include <viz/client_gephi.hpp>
 #include <viz/net_collector.hpp>
+#include <viz/net_collector_timewindow.cpp>
 #include <viz/viz_selector.hpp>
 
 using namespace std;
@@ -72,10 +73,11 @@ void get_linkpack( const char *bufch,
 // either to the output file, or to the gephi server
 // if verbose>0 gives extra statics on the network reduction
 //=====================================================================
-int do_filter( string input, string server, string output, 
-               int verbose,
+int do_filter( int verbose, string viztype, string input, string output, 
+               string server,
                const unsigned maxstored, const unsigned maxvisualized,
                unsigned forgetevery, double forgetconst, 
+               unsigned long timewindow,
                double edgemin, string label1, string label2,
                unsigned timecontraction, unsigned fps, int scoretype
                ) {
@@ -145,11 +147,15 @@ int do_filter( string input, string server, string output,
    if (server!="") myoutput=new client_gephi(server,output);
    else myoutput=new client_file(output);
    
-   net_collector *mynet;
+   net_collector_base *mynet;
    viz_selector_base *myviz;
    
-   mynet=new net_collector( maxstored, myclockcollector );
-   myviz=new viz_selector( *mynet, *myoutput, myclockcollector );
+   if (viztype=="fastviz") 
+      mynet=new net_collector( maxstored, myclockcollector );
+   else 
+      mynet=new net_collector_timewindow( maxstored, timewindow,  myclockcollector );
+   
+   myviz=new viz_selector( *mynet, *myoutput, myclockcollector, verbose );
    
    if (server=="") 
       myviz->add_labels( pt::to_simple_string(pt::from_time_t(linktime)), 
@@ -187,7 +193,8 @@ int do_filter( string input, string server, string output,
             myclockcollector.collect("TTTTadd_linkpack");
             total_links+=(linkpack.size()-1)*linkpack.size();
             if (verbose==9) cout<<total_read-1;
-            if ( linkpack.size()>1 ) mynet->add_linkpack( linkpack, scoretype );
+            if ( linkpack.size()>1 ) mynet->add_linkpack( linkpack, scoretype, 
+                  linktime );
          }
          if (verbose>1) {
             all_nodes.insert( linkpack.begin(), linkpack.end() );
@@ -246,8 +253,23 @@ int do_filter( string input, string server, string output,
       if (server=="") 
          myviz->change_label_datetime(
             pt::to_simple_string(pt::from_time_t(long(ts))));
-      myviz->draw(maxvisualized, edgemin, verbose, label2);
       
+      mynet->update_net_collector_base();
+      myviz->draw(maxvisualized, edgemin, label2);
+      
+      unsigned nodes_number = mynet->get_nodes_number();
+      double total_score = mynet->get_total_score();
+      unsigned nodes_visualized = myviz->get_nodes_visualized();
+      unsigned nodes_not_visualized = myviz->get_nodes_not_visualized();
+      unsigned total_score_viz = myviz->get_total_score();
+
+      if (frame%100==0) {
+         printf("Frame stats: nodes buffered=%5d, total score=%5.0f, "
+            "nodes visualized=%4d, not=%4d, total score=%4.0f.\n", 
+            nodes_number, total_score, 
+            nodes_visualized, nodes_not_visualized, total_score_viz);
+      }
+
       // sleep if gephi server is specified to in between sent events
       if (server!="") {
          /*
@@ -288,14 +310,22 @@ int main(int argc, char** argv) {
    desc.add_options()
       ("help", "show options")
       ("verbose", po::value<int>()->default_value(1), "")
+      ("viztype", po::value<string>()->default_value("fastviz"),
+         "Possible visualization types: fastviz (default), time-window")
       ("input", po::value<string>()->default_value(""),"")
       ("output", po::value<string>()->default_value(""), "")
       ("server", po::value<string>()->default_value(""), 
-       "address to the updateGraph command of Gephi Streaming API server. If not provided then output is printed to file pointed as argument of --output option.")
+         "Address to the updateGraph command of Gephi Streaming API server."
+         "If not provided then output is printed to file pointed as argument" 
+         "of --output option.")
       ("maxstored", po::value<unsigned long>()->default_value(2000), "")
       ("maxvisualized", po::value<unsigned long>()->default_value(50), "")
-      ("forgetevery", po::value<unsigned>()->default_value(10), "")
-      ("forgetconst", po::value<double>()->default_value(0.75), "")
+      ("forgetevery", po::value<unsigned>()->default_value(10), 
+         "Influences only the fastviz algorithm.")
+      ("forgetconst", po::value<double>()->default_value(0.75), 
+         "Influences only the fastviz algorithm.")
+      ("timewindow", po::value<unsigned long>()->default_value(2000), 
+         "Influences only the timewindow algorithm.")
       ("edgemin", po::value<double>()->default_value(0.95), "")
       ("label1", po::value<string>()->default_value(""),"")
       ("label2", po::value<string>()->default_value(""),"")
@@ -313,6 +343,8 @@ int main(int argc, char** argv) {
       exit(1);
    }
    unsigned verbose = vm["verbose"].as<int>();
+
+   string viztype = vm["viztype"].as<string>();
    
    string input = vm["input"].as<string>();
    string output = vm["output"].as<string>();
@@ -329,6 +361,7 @@ int main(int argc, char** argv) {
    unsigned maxvisualized = vm["maxvisualized"].as<unsigned long>();
    unsigned forgetevery = vm["forgetevery"].as<unsigned>();
    double forgetconst = vm["forgetconst"].as<double>();
+   unsigned timewindow = vm["timewindow"].as<unsigned long>();
    double edgemin = vm["edgemin"].as<double>();
    string label1 = vm["label1"].as<string>();
    string label2 = vm["label2"].as<string>();
@@ -336,9 +369,9 @@ int main(int argc, char** argv) {
    unsigned fps = vm["fps"].as<unsigned>();
    int scoretype = vm["scoretype"].as<int>();
   
-   do_filter( input, server, output, verbose,
+   do_filter( verbose, viztype, input, output, server, 
               maxstored, maxvisualized, 
-              forgetevery, forgetconst, edgemin, label1, label2, 
+              forgetevery, timewindow, forgetconst, edgemin, label1, label2, 
               timecontraction, fps, scoretype
               );
    return 0;

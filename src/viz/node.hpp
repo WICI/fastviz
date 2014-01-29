@@ -37,16 +37,16 @@ struct node_the:node_base {
   bool operator==(const string &other) const {return nm==other;}
 };
 
-struct node_viz {
-	string label; //name
-	double size; //strength
-	double r, g, b; //color
-	double counter;
+// struct node_viz {
+// 	string label; //name
+// 	double size; //strength
+// 	double r, g, b; //color
+// 	double counter;
 	
-	node_viz() {label=""; size=5; g=r=b=0.5;}
-	bool operator<(const node_viz &other) const {return label<other.label;}
-	bool operator==(const node_viz &other) const {return label==other.label;}
-};
+// 	node_viz() {label=""; size=5; g=r=b=0.5;}
+// 	bool operator<(const node_viz &other) const {return label<other.label;}
+// 	bool operator==(const node_viz &other) const {return label==other.label;}
+// };
 
 
 struct node {
