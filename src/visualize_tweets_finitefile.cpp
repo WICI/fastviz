@@ -61,10 +61,12 @@ void get_linkpack( const char *bufch,
    }
    linkpack.assign(unique.begin(),unique.end());
    
-   if (linkpack.size()<2) {
-      cout<<"Line: "<<bufch<<endl;
-      cout<<" has has less than 3 collumns, skipping the line..."<<endl;
-   }
+   // debugging
+   // cout<<"Line: "<<bufch<<endl;
+   // if (linkpack.size()<2) {
+   //    cout<<"Line: "<<bufch<<endl;
+   //    cout<<" has has less than 3 collumns, skipping the line..."<<endl;
+   // }
 }
 
 //=====================================================================
@@ -79,7 +81,7 @@ int do_filter( int verbose, string viztype, string input, string output,
                unsigned forgetevery, double forgetconst, 
                unsigned long timewindow,
                double edgemin, string label1, string label2,
-               unsigned timecontraction, unsigned fps, int scoretype
+               unsigned timecontraction, unsigned fps, int weighttype
                ) {
    // system signals handlers
    signal(SIGINT, handle_kill);
@@ -106,6 +108,8 @@ int do_filter( int verbose, string viztype, string input, string output,
    
    cout<<"Starting to create differential network files."<<endl;
    cout<<"List of parameters:"<<endl;
+   cout<<"  verbose: "<<verbose<<endl;
+   cout<<"  viztype: "<<viztype<<endl;
    cout<<"  input: "<<input<<endl;
    cout<<"  output: "<<output<<endl;
    cout<<"  server: "<<server<<endl;
@@ -114,9 +118,11 @@ int do_filter( int verbose, string viztype, string input, string output,
    cout<<"  forgetevery: "<<forgetevery<<endl;
    cout<<"  forgetconst: "<<forgetconst<<endl;
    cout<<"  edgemin: "<<edgemin<<endl;
+   cout<<"  label1: "<<label1<<endl;
    cout<<"  label2: "<<label2<<endl;
    cout<<"  timecontraction: "<<timecontraction<<endl;
    cout<<"  fps: "<<fps<<endl;
+   cout<<"  weighttype: "<<weighttype<<endl;
    
    cout<<"Derived:"<<endl;
    cout<<"  interval: "<<upd_interval<<endl;
@@ -150,6 +156,7 @@ int do_filter( int verbose, string viztype, string input, string output,
    net_collector_base *mynet;
    viz_selector_base *myviz;
    
+   // debugging
    if (viztype=="fastviz") 
       mynet=new net_collector( maxstored, myclockcollector );
    else 
@@ -193,8 +200,8 @@ int do_filter( int verbose, string viztype, string input, string output,
             myclockcollector.collect("TTTTadd_linkpack");
             total_links+=(linkpack.size()-1)*linkpack.size();
             if (verbose==9) cout<<total_read-1;
-            if ( linkpack.size()>1 ) mynet->add_linkpack( linkpack, scoretype, 
-                  linktime );
+            if ( linkpack.size()>1 ) 
+               mynet->add_linkpack( linkpack, weighttype, linktime );
          }
          if (verbose>1) {
             all_nodes.insert( linkpack.begin(), linkpack.end() );
@@ -254,16 +261,27 @@ int do_filter( int verbose, string viztype, string input, string output,
          myviz->change_label_datetime(
             pt::to_simple_string(pt::from_time_t(long(ts))));
       
+      // update adjeciency matric if needed and draw
       mynet->update_net_collector_base();
       myviz->draw(maxvisualized, edgemin, label2);
       
+      // output additional statistics
       unsigned nodes_number = mynet->get_nodes_number();
       double total_score = mynet->get_total_score();
       unsigned nodes_visualized = myviz->get_nodes_visualized();
       unsigned nodes_not_visualized = myviz->get_nodes_not_visualized();
       unsigned total_score_viz = myviz->get_total_score();
 
-      if (frame%100==0) {
+      // debugging
+      if (frame%50==0) {
+         for (int i=0; i<10; i++) cout<<mynet->names[i]<<" ";
+         cout<<endl;
+         for (int i=0; i<10; i++) {
+            for (int j=0; j<10; j++)
+               cout<<mynet->net[i][j]<<" ";
+            cout<<endl;
+         } 
+
          printf("Frame stats: nodes buffered=%5d, total score=%5.0f, "
             "nodes visualized=%4d, not=%4d, total score=%4.0f.\n", 
             nodes_number, total_score, 
@@ -294,6 +312,12 @@ int do_filter( int verbose, string viztype, string input, string output,
       myclockcollector.printall();
       myclockcollector.resetall();
    }
+
+   // debugging
+   // if (verbose>5) {
+   //    for (int i=0; i<10; i++)
+   //       cout<<mynet->names[i]<<" "<<mynet->net[i][i]<<" ";
+   // }
    
    return total_links;
 }
@@ -331,7 +355,7 @@ int main(int argc, char** argv) {
       ("label2", po::value<string>()->default_value(""),"")
       ("timecontraction", po::value<unsigned>()->default_value(3600), "")
       ("fps", po::value<unsigned>()->default_value(30), "")
-      ("scoretype", po::value<int>()->default_value(1), "")
+      ("weighttype", po::value<int>()->default_value(1), "")
       ; 
    
    po::variables_map vm;
@@ -367,12 +391,12 @@ int main(int argc, char** argv) {
    string label2 = vm["label2"].as<string>();
    unsigned timecontraction = vm["timecontraction"].as<unsigned>();
    unsigned fps = vm["fps"].as<unsigned>();
-   int scoretype = vm["scoretype"].as<int>();
+   int weighttype = vm["weighttype"].as<int>();
   
    do_filter( verbose, viztype, input, output, server, 
               maxstored, maxvisualized, 
-              forgetevery, timewindow, forgetconst, edgemin, label1, label2, 
-              timecontraction, fps, scoretype
+              forgetevery, forgetconst, timewindow, edgemin, label1, label2, 
+              timecontraction, fps, weighttype
               );
    return 0;
 }

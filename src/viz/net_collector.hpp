@@ -29,8 +29,8 @@ public:
 			myclockcollector=&mycc;
 	}
 	
-	void add_linkpack (vector <string> &linkpack, double scoretype=1, 
-			double weight=1.0) {
+	void add_linkpack (vector <string> &linkpack, double weighttype=1, 
+			long ts=-1) {
 		typedef typename vector <string>::const_iterator ittype;
 		
 		double m=linkpack.size();
@@ -38,9 +38,9 @@ public:
 		double edgeincrement; //edge score edgeincrement
 		double nodeincrement; //node score edgeincrement
 		
-		if (scoretype==1) { edgeincrement=2.0/(m-1)/m; nodeincrement=2.0/m; }
-		if (scoretype==2) { edgeincrement=1.0/m; nodeincrement=1.0; }
-		if (scoretype==3) { edgeincrement=2.0/sqrt(m-1)/sqrt(m); nodeincrement=2.0/sqrt(m); }
+		if (weighttype==1) { edgeincrement=2.0/(m-1)/m; nodeincrement=2.0/m; }
+		if (weighttype==2) { edgeincrement=1.0/m; nodeincrement=1.0; }
+		if (weighttype==3) { edgeincrement=2.0/sqrt(m-1)/sqrt(m); nodeincrement=2.0/sqrt(m); }
 		
 		
 		//------------------------------------------------------------------
@@ -167,12 +167,22 @@ public:
 		
 		myclockcollector->collect("TTTTaddedtostored");
 		
+   // debugging
+   // cout<<"add_linkpack verbose: "<<verbose<<endl;
+   // if (verbose>5) {
+   // 	cout<<"add_linkpack: ";
+   //    for (int i=0; i<10; i++)
+   //       cout<<names[i]<<" "<<net[i][i]<<" ";
+   // }
+
 		//boost::this_thread::sleep(boost::posix_time::milliseconds(p_sleep));
 	}	
 	
 	//------------------------------------------------------------------
 	// forgetting
 	void forget_connections (double forgetfactor) {
+		// debugging
+		cout<<"FORGETTTING!"<<endl;
 		for (int i=0; i<net.size(); i++) for (int j=0; j<net[i].size(); j++)
 			if (net[i][j]!=0) net[i][j]*=forgetfactor;
 	}

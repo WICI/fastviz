@@ -37,51 +37,6 @@ struct node_the:node_base {
   bool operator==(const string &other) const {return nm==other;}
 };
 
-// struct node_viz {
-// 	string label; //name
-// 	double size; //strength
-// 	double r, g, b; //color
-// 	double counter;
-	
-// 	node_viz() {label=""; size=5; g=r=b=0.5;}
-// 	bool operator<(const node_viz &other) const {return label<other.label;}
-// 	bool operator==(const node_viz &other) const {return label==other.label;}
-// };
-
-
-struct node {
-  string nm; //name
-  double str; //strength
-  unsigned pos; //position
-  
-  node() {nm=""; str=0; pos=-1; }
-  node(string name, unsigned position, double strength) {
-	  nm=name; pos=position; str=strength;
-  }
-  
-  bool operator<(const node &other) const {return nm<other.nm;}
-  bool operator==(const node &other) const {return nm==other.nm;}
-  bool operator<(const string &other) const {return nm<other;}
-  bool operator==(const string &other) const {return nm==other;}
-//   void operator=(string &name) const {nm=name;}
-};
-
-struct node_with_counter:node {
-	double counter;
-	
-	node_with_counter():node() {counter=0;}
-	node_with_counter(string name, unsigned position, double strength, 
-						 double countervalue):node(name, position,strength)
-	{ counter=countervalue; }
-	node_with_counter(node_the &other) {
-		nm=other.nm; pos=other.pos; str=other.str; counter=0;
-	}
-	
-	void operator=(node_the &other) {
-		nm=other.nm; pos=other.pos; str=other.str; counter=0;
-	}
-};
-
 
 template <class T0>
 bool compare_node_strength ( T0 i, T0 j) { return (i.str<j.str); }

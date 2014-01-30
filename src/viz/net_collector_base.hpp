@@ -20,7 +20,7 @@ public:
 	void erase_collector_base_content () {
 		for (int i=0; i<net.size(); i++)
 			for (int j=0; j<net[i].size(); j++)
-				net[i][j]!=0;
+				net[i][j]=0;
 		names.erase(names.begin(), names.begin());
 	}
 
@@ -31,15 +31,15 @@ public:
    }
 
    double get_total_score() {
-   	double result;
+   	double result=0;
 		for (int i=0; i<net.size(); i++)
-			for (int j=0; j<net[i].size(); j++)
+			for (int j=0; j<net[i].size(); j++) if (i!=j)
 				result += net[i][j];
 		return result;
    }
 
+   virtual void add_linkpack (vector <string> &linkpack, double weight, long ts) = 0;
    virtual void update_net_collector_base () {}
-   virtual void add_linkpack (vector <string> &linkpack, double weight, long ts) {}
    virtual void forget_connections (double forgetfactor) {}
 
 	const unsigned maxstored; // 20000 corresponds to around 4gb of memory 

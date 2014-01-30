@@ -21,7 +21,7 @@ class viz_selector_base {
 public:
 	virtual void draw (const unsigned maxvisualized, double edgeminweight, 
                       string excluded="",
-							 double r=0.5, double g=0.5, double b=0.5) = 0;
+							 double r=0.5, double g=0.5, double b=0.5) {};
 
 	void add_labels(string datetime="",
                    string label1="", 
@@ -43,7 +43,7 @@ public:
 	}
 	
    // get aggregated statistics
-   virtual long get_how_many_drawn()  = 0;
+   virtual long get_how_many_drawn()  {};
 	unsigned get_nodes_visualized(){ return nodes_visualized; }
 	unsigned get_nodes_not_visualized(){ return nodes_not_visualized; }
 	unsigned get_total_score(){ return total_score; }
@@ -65,11 +65,15 @@ protected:
 			bnodes.push_back(tmpnode);
 		}
 		sort ( bnodes.begin(), bnodes.end(), compare_node_strength<T0> );
-		if (verbose>4){
-			for (int i=0; i<bnodes.size(); i++)
-				cout<<bnodes[i].nm<<" "<<network->net[bnodes[i].pos][bnodes[i].pos]<<" ";
-			cout<<endl;
-		}
+  		// debugging
+		// if (verbose>4){
+		// 	for (int i=0; i<bnodes.size(); i++)
+		// 		cout<<bnodes[i].nm<<" "<<
+		// 			 network->net[bnodes[i].pos][bnodes[i].pos]<<" ";
+		// 	cout<<endl;
+		// 	for (int i=0; i<10; i++)
+		// 		cout<<network->names[i]<<" "<<network->net[i][i]<<" ";
+		// }
 
 		// select strongest nodes
 		unsigned currvisualized;
@@ -94,7 +98,7 @@ protected:
 		}}
 		
 		// sort according to the name in order to compare with previous state
-		sort ( vntmp.begin(), vntmp.end() );		
+		sort ( vntmp.begin(), vntmp.end() );
 	}
 	
    
@@ -200,14 +204,16 @@ protected:
 			for (itype j=visn.begin(); j!=visn.end(); j++) {
 				if (network->net[extractpos(*i)][extractpos(*j)]>edgeminweight) if (i!=j) {
 					if (eidm[extractpos(*i)][extractpos(*j)]) {
-						oc->set_attributes( "weight",network->net[extractpos(*i)][extractpos(*j)], 
+						oc->set_attributes(
+							"weight",network->net[extractpos(*i)][extractpos(*j)], 
 							"r",r, "g",g, "b",b );
 						oc->change_edge( eidm[extractpos(*i)][extractpos(*j)] );
 					}
 					else {
-						oc->set_attributes( "source",(*i).nm, "target",network->names[extractpos(*j)],
-												  "directed",false, "weight",network->net[extractpos(*i)][extractpos(*j)],
-												  "r",r, "g",g, "b",b );
+						oc->set_attributes( 
+							"source",(*i).nm, "target",network->names[extractpos(*j)],
+							"directed",false, "weight",network->net[extractpos(*i)][extractpos(*j)],
+							"r",r, "g",g, "b",b );
 						oc->add_edge( eid );
 						eidm[extractpos(*i)][extractpos(*j)]=eid;
 						eidm[extractpos(*j)][extractpos(*i)]=eid;
@@ -246,7 +252,7 @@ public:
    // the main method, calling all the private methods
 	void draw (const unsigned maxvisualized, double edgeminweight, 
                string excluded="", double r=0.5, double g=0.5, double b=0.5) {
-		if (verbose==5) cout<<"___________________________________________"<<endl;
+		if (verbose>5) cout<<"___________________________________________"<<endl;
 		
 		// selects nodes from network, removes singletons, sorts them, and 
 		// puts them into vntmp
@@ -257,7 +263,7 @@ public:
 		// no idea what this shit does
 		adddelete_nodes(prevvisn, vntmp, visn, eidm, 
 			clean_edgeids < vector <node_the>, vector <vector <unsigned long> > > );
-		if (verbose==5) {
+		if (verbose>5) {
 			for (int i=0; i<prevvisn.size(); i++) cout<<prevvisn[i].nm<<" "; 
 				cout<<endl;
 			for (int i=0; i<vntmp.size(); i++) cout<<vntmp[i].nm<<" "; 
@@ -271,13 +277,13 @@ public:
 		change_nodes( network, visn, excluded );
 		change_edges( network, visn, eidm, extract_position<node_with_counter>, 
 						  edgeminweight, 0.4, 0.6, 0.8 );
+   	if (verbose>0) allnodes_drawn.insert( visn.begin(), visn.end() );
 		swap(prevvisn,vntmp);
-		myclockcollector->collect("TTTTupdate_nodes_edges");
-		
-      if (verbose>0) allnodes_drawn.insert( visn.begin(), visn.end() );
+		myclockcollector->collect("TTTTupdate_nodes_edges");		
       
 		oc->update();
 		myclockcollector->collect("TTTTgcupdate");
+
 	}
 	
    // get aggregated statistics
