@@ -1,5 +1,5 @@
 /*
- * Various node structures used in the main code
+ * Various node classes used in the main code
  */
 
 #ifndef VIZ_NODE_HPP

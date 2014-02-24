@@ -17,14 +17,14 @@ public:
 		:names(maxstored), net(maxstored, vector <double> (maxstored,0)), 
 		maxstored(maxstored) {}
 
-	void erase_collector_base_content () {
+	void reset_collector_base_content () {
 		for (int i=0; i<net.size(); i++)
 			for (int j=0; j<net[i].size(); j++)
 				net[i][j]=0;
-		names.erase(names.begin(), names.begin());
+		for (int i=0; i<names.size(); i++) names[i]="";
 	}
 
-   double get_nodes_number() {
+   unsigned get_nodes_number() {
    	unsigned result;
 		for (int i=0; i<names.size(); i++) if (names[i]!="") result++;
 		return result;
@@ -39,8 +39,8 @@ public:
    }
 
    virtual void add_linkpack (vector <string> &linkpack, double weight, long ts) = 0;
-   virtual void update_net_collector_base () {}
-   virtual void forget_connections (double forgetfactor) {}
+   virtual void update_net_collector_base () = 0;
+   virtual void forget_connections (double forgetfactor) = 0;
 
 	const unsigned maxstored; // 20000 corresponds to around 4gb of memory 
 	vector <string> names;

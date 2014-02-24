@@ -46,7 +46,7 @@ public:
    virtual long get_how_many_drawn()  {};
 	unsigned get_nodes_visualized(){ return nodes_visualized; }
 	unsigned get_nodes_not_visualized(){ return nodes_not_visualized; }
-	unsigned get_total_score(){ return total_score; }
+	double get_total_score(){ return total_score; }
    
 protected:
 	
@@ -106,7 +106,8 @@ protected:
    // eidm is a matrix of size of net matrix, to save processor time,
    // it could be implemented differently, now it's very memory expensive
 	template <class T0, class T1>
-	static void clean_edgeids(T0 &prevvisn, T1 &eidm, typename T0::iterator &node_deleted) {
+	static void clean_edgeids(T0 &prevvisn, T1 &eidm, 
+			typename T0::iterator &node_deleted) {
 		for (int i=0; i<prevvisn.size(); i++) {
 			eidm[node_deleted->pos][prevvisn[i].pos]=0;
 			eidm[prevvisn[i].pos][node_deleted->pos]=0;
@@ -116,13 +117,13 @@ protected:
    // makes differential comparison of prevvisn and vntmp, 
    // namely of what has been visualized and what will
    // be visualized, and sends the changes to the output client
-	template <class T0, class T1, class T2, class F>
-	void adddelete_nodes(T0 &prevvisn, T0 &vntmp, T1 &visn, T2 &eidm, 
+	template <class T1, class T2, class T3, class F>
+	void adddelete_nodes(T1 &prevvisn, T2 &vntmp, T3 &eidm, 
 			F cleaner_function ) {
-		typedef typename T0::iterator ittype0;
 		typedef typename T1::iterator ittype1;
-		typedef typename T1::value_type vtype1;
-		ittype0 first1, last1, first2, last2;
+		typedef typename T2::iterator ittype2;
+		ittype1 first1, last1;
+		ittype2 first2, last2;
 		first1=prevvisn.begin(); last1=prevvisn.end();
 		first2=vntmp.begin(); last2=vntmp.end();
 		// layout - red/blue
@@ -135,15 +136,12 @@ protected:
 			if ((*first1).nm<(*first2).nm) {
 				oc->delete_node((*first1).nm);
 				cleaner_function(prevvisn, eidm, first1);
-				{ittype1 foundit=find(visn.begin(),visn.end(),(*first1).nm);
-				assert(foundit!=visn.end()); visn.erase(foundit);}
 				++first1;
 			}
          // add node and all its edges to visualization
 			else if ((*first2).nm<(*first1).nm) {
 				oc->set_attributes("r",1, "g",1, "b",0, "label",(*first2).nm);
 				oc->add_node((*first2).nm);
-				{vtype1 tmpnode=(*first2); visn.push_back(tmpnode); visn.back().counter=1;}
 				++first2;						
 			}
          // update outgoing edge weights of the node     
@@ -155,15 +153,12 @@ protected:
 		while (first1!=last1) {
 			oc->delete_node((*first1).nm);
 			cleaner_function(prevvisn, eidm, first1);
-			{ittype1 foundit=find(visn.begin(),visn.end(),(*first1).nm);
-			assert(foundit!=visn.end()); visn.erase(foundit);}
 			++first1;
 		}
       // add node and all its edges to visualization
 		while (first2!=last2) {
 			oc->set_attributes("r",1, "g",1, "b",0, "label",(*first2).nm);
 			oc->add_node((*first2).nm);
-			{vtype1 tmpnode=(*first2); visn.push_back(tmpnode); visn.back().counter=1;}
 			++first2;						
 		}		
 	}
@@ -174,19 +169,10 @@ protected:
 		typedef typename T0::iterator itype;
 		for (itype i=visn.begin(); i!=visn.end(); i++) {
 			if (i->nm!=excluded) {
-				// layout - red/blue
-				//oc->set_attributes( "r",(*i).counter, "g",0.5, "b",1.4999-(*i).counter,
-				//						 "size",5*sqrt(network->net[(*i).pos][(*i).pos]) );
-				// layout - yellow/blue
-				//oc->set_attributes( "r",(*i).counter, "g",(*i).counter, "b",2-2*(*i).counter,
-				//						  "size",5*sqrt(network->net[(*i).pos][(*i).pos]) );
 				oc->set_attributes( "r",0.0, "g",0.2, "b",0.8,
 										  "size",5*sqrt(network->net[(*i).pos][(*i).pos]) );
 			}
-			//else {oc->set_attributes( "r",1, "g",0.5, "b",0.5, "size",5*6 );}
 			oc->change_node((*i).nm);
-			if ((*i).counter>0.5) (*i).counter-=0.02;
-			//(*i).counter=0.95*(*i).counter;
 		}
 	}
 	
@@ -197,12 +183,14 @@ protected:
 	
    // sends to the output client changes in edge weights and colors
 	template <class T0, class T1, class F>
-	void change_edges(net_collector_base *network, T0 &visn, T1 &eidm, F extractpos,
-			double edgeminweight=0.0001, double r=0.5, double g=0.5, double b=0.5) {
+	void change_edges(net_collector_base *network, T0 &visn, 
+							T1 &eidm, F extractpos, double edgeminweight=0.0001, 
+							double r=0.5, double g=0.5, double b=0.5) {
 		typedef typename T0::iterator itype;
 		for (itype i=visn.begin(); i!=visn.end(); i++)
 			for (itype j=visn.begin(); j!=visn.end(); j++) {
-				if (network->net[extractpos(*i)][extractpos(*j)]>edgeminweight) if (i!=j) {
+				if (network->net[extractpos(*i)][extractpos(*j)]>edgeminweight) 
+				if (i!=j) {
 					if (eidm[extractpos(*i)][extractpos(*j)]) {
 						oc->set_attributes(
 							"weight",network->net[extractpos(*i)][extractpos(*j)], 
@@ -211,8 +199,10 @@ protected:
 					}
 					else {
 						oc->set_attributes( 
-							"source",(*i).nm, "target",network->names[extractpos(*j)],
-							"directed",false, "weight",network->net[extractpos(*i)][extractpos(*j)],
+							"source",(*i).nm, 
+							"target",network->names[extractpos(*j)],
+							"directed",false, 
+							"weight",network->net[extractpos(*i)][extractpos(*j)],
 							"r",r, "g",g, "b",b );
 						oc->add_edge( eid );
 						eidm[extractpos(*i)][extractpos(*j)]=eid;
@@ -261,23 +251,21 @@ public:
 		myclockcollector->collect("TTTTselect_nodes");
 		
 		// no idea what this shit does
-		adddelete_nodes(prevvisn, vntmp, visn, eidm, 
+		adddelete_nodes(prevvisn, vntmp, eidm, 
 			clean_edgeids < vector <node_the>, vector <vector <unsigned long> > > );
 		if (verbose>5) {
 			for (int i=0; i<prevvisn.size(); i++) cout<<prevvisn[i].nm<<" "; 
 				cout<<endl;
 			for (int i=0; i<vntmp.size(); i++) cout<<vntmp[i].nm<<" "; 
 				cout<<endl;
-			for (list<node_with_counter>::iterator i=visn.begin(); i!=visn.end(); i++) 
-				cout<<(*i).nm<<" ";
 			cout<<endl;
 		}
 		myclockcollector->collect("TTTTadddelete_nodes");
 
-		change_nodes( network, visn, excluded );
-		change_edges( network, visn, eidm, extract_position<node_with_counter>, 
+		change_nodes( network, vntmp, excluded );
+		change_edges( network, vntmp, eidm, extract_position<node_the>, 
 						  edgeminweight, 0.4, 0.6, 0.8 );
-   	if (verbose>0) allnodes_drawn.insert( visn.begin(), visn.end() );
+   	if (verbose>0) allnodes_drawn.insert( vntmp.begin(), vntmp.end() );
 		swap(prevvisn,vntmp);
 		myclockcollector->collect("TTTTupdate_nodes_edges");		
       
@@ -294,11 +282,10 @@ private:
 	
    // main containers
 	vector <node_the> prevvisn;
-	list <node_with_counter> visn;
 	vector <vector <unsigned long> > eidm;
    
    // used only for the purpose of aggregated statistics
-   set <node_with_counter> allnodes_drawn;
+   set <node_the> allnodes_drawn;
    
 	clock_collectors *myclockcollector;
 };

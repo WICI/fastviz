@@ -3,7 +3,7 @@
 function print_description {
    echo "This script serves as a launcher of the software"
    echo ""
-   echo "Synopis:" 
+   echo "Synopis:"
    echo "   ./run.sh whattodo={test, demo-diffnets, demo-movies, gephi}"
    echo ""
    echo "Please specify what you want to do:"
@@ -29,9 +29,9 @@ else
    else
       export DYLD_LIBRARY_PATH=$DYLD_LIBRARY_PATH:$JSON_BIN:$BOOST_BIN
    fi
-   
+
    mkdir logs > /dev/null 2>&1
-   
+
    case "$1" in
    "test" )
       echo "===================================================================="
@@ -57,23 +57,23 @@ else
       ;;
    "demo-diffnets" )
       echo -n "Launched generation of differential network files "
-      
+
       net=osama; echo -n "data/$net.sdnet "
       if [ -f data/$net.sdnet.gz ]; then gunzip -c data/$net.sdnet.gz > data/$net.sdnet; fi
-      time ./visualize_tweets_finitefile --verbose 2 --input data/$net.sdnet --timecontraction 500 --maxvisualized 50 --forgetconst 0.6 --edgemin 0.95 --forgetevery 40 --output data/$net --label1 "death of" --label2 "Osama bin Laden" > logs/diffnet_$net.log &
+      time ./visualize_tweets_finitefile --verbose 2 --input data/$net.sdnet --timecontraction 500 --maxvisualized 50 --forgetconst 0.6 --edgemin 0.95 --forgetevery 40 --output "data/${net}" --label1 "death of" --label2 "Osama bin Laden" > logs/diffnet_$net.log &
 
       net=superbowl; echo -n "data/$net.sdnet "
       if [ -f data/$net.sdnet.gz ]; then gunzip -c data/$net.sdnet.gz > data/$net.sdnet; fi
-      time ./visualize_tweets_finitefile --verbose 2 --input data/$net.sdnet --timecontraction 3600 --maxvisualized 50 --forgetconst 0.6 --edgemin 10.0 --forgetevery 20 --output data/$net --label1 "hashtags during the" --label2 "#superbowl" > logs/diffnet_$net.log &
-      
+      time ./visualize_tweets_finitefile --verbose 2 --input data/$net.sdnet --timecontraction 3600 --maxvisualized 50 --forgetconst 0.6 --edgemin 10.0 --forgetevery 20 --output "data/${net}" --label1 "hashtags during the" --label2 "#superbowl" > logs/diffnet_$net.log &
+
       net=patents_full; echo -n "data/$net.sdnet "
       if [ -f data/$net.sdnet.gz ]; then gunzip -c data/$net.sdnet.gz > data/$net.sdnet; fi
-      time ./visualize_tweets_finitefile --verbose 2 --input data/$net.sdnet --timecontraction $((3600*24*400)) --maxvisualized 50 --forgetconst 0.65 --edgemin 20 --forgetevery 10 --output data/${net} --label1 "words from" --label2 "patent titles" > logs/diffnet_$net.log &
-      
+      time ./visualize_tweets_finitefile --verbose 2 --input data/$net.sdnet --timecontraction $((3600*24*400)) --maxvisualized 50 --forgetconst 0.65 --edgemin 20 --forgetevery 10 --output "data/${net}" --label1 "words from" --label2 "patent titles" > logs/diffnet_$net.log &
+
       net=imdb; echo -n "data/$net.sdnet "
       if [ -f data/$net.sdnet.gz ]; then gunzip -c data/$net.sdnet.gz > data/$net.sdnet; fi
-      time ./visualize_tweets_finitefile --verbose 2 --input data/$net.sdnet --timecontraction $((3600*24*365*3)) --maxvisualized 80 --forgetconst 0.75 --edgemin 10 --forgetevery 10 --output data/${net} --weighttype 2 --label1 "plot keywords" --label2 "of movies" > logs/diffnet_$net.log &
-      
+      time ./visualize_tweets_finitefile --verbose 2 --input data/$net.sdnet --timecontraction $((3600*24*365*3)) --maxvisualized 80 --forgetconst 0.75 --edgemin 10 --forgetevery 10 --output "data/${net}" --weighttype 2 --label1 "plot keywords" --label2 "of movies" > logs/diffnet_$net.log &
+
       echo
       echo "Please wait until finished..."
       wait
@@ -86,26 +86,56 @@ else
       done
       echo "Finished. Movies are saved in the 'movies' subdirectory."
       ;;
-   "demo-method-comparison" )
+   "allmethods-movies" )
+      echo "Launching generation of movies."
+      for myfile in data/*_{fastviz,timewindow}.json; do
+         python scripts/DynamicGraph_wici.py $myfile
+      done
+      echo "Finished. Movies are saved in the 'movies' subdirectory."
+      ;;
+   "allmethods-diffnets" )
       echo -n "Launched generation of differential network files "
-      
+
       net=osama; echo -n "data/$net.sdnet "
+      vtc=500; vfc=0.9; vtw=$(echo "scale=0; $vtc*$vfc*$vfc*$vfc"|bc -l)
+      sharedoptions="--verbose 2 --input data/$net.sdnet --timecontraction $vtc"
       if [ -f data/$net.sdnet.gz ]; then gunzip -c data/$net.sdnet.gz > data/$net.sdnet; fi
-      time ./visualize_tweets_finitefile --verbose 2 --viztype fastviz --input data/$net.sdnet --timecontraction 500 --maxvisualized 50 --forgetconst 0.6 --edgemin 0.95 --forgetevery 40 --output data/$net --label1 "death of" --label2 "Osama bin Laden" > logs/diffnet_fastviz_$net.log &
-      time ./visualize_tweets_finitefile --verbose 2 --viztype timewindow --input data/$net.sdnet --timecontraction 500 --maxvisualized 50 --forgetconst 0.6 --edgemin 0.95 --forgetevery 40 --output data/$net --label1 "death of" --label2 "Osama bin Laden" > logs/diffnet_timewindow_$net.log &
+      time ./visualize_tweets_finitefile --viztype fastviz $sharedoptions --maxvisualized 50 --forgetconst $vfc --edgemin 0.95 --forgetevery 10 --output "data/${net}_fastviz" --label1 "death of" --label2 "Osama bin Laden" > logs/diffnet_${net}_fastviz.log &
+      time ./visualize_tweets_finitefile $sharedoptions --maxvisualized 50 --viztype timewindow --maxstored 10000 --timewindow $vtw --edgemin 0.95 --output "data/${net}_timewindow" --label1 "death of" --label2 "Osama bin Laden" > logs/diffnet_${net}_timewindow.log
+
+      net=superbowl; echo -n "data/$net.sdnet "
+      vtc=3600; vfc=0.8; vtw=$(echo "$vtc*$vfc*$vfc*$vfc"|bc -l)
+      sharedoptions="--verbose 2 --input data/$net.sdnet --timecontraction $vtc"
+      if [ -f data/$net.sdnet.gz ]; then gunzip -c data/$net.sdnet.gz > data/$net.sdnet; fi
+      time ./visualize_tweets_finitefile --viztype fastviz $sharedoptions --maxvisualized 50 --forgetconst $vfc --edgemin 10.0 --forgetevery 10 --output "data/${net}_fastviz" --label1 "hashtags during the" --label2 "#superbowl" > logs/diffnet_${net}_fastviz.log &
+      time ./visualize_tweets_finitefile $sharedoptions --maxvisualized 50 --viztype timewindow --maxstored 10000 --timewindow $vtw --edgemin 10.0 --output "data/${net}_timewindow" --label1 "hashtags during the" --label2 "#superbowl" > logs/diffnet_${net}_timewindow.log
+
+      net=patents_full; echo -n "data/$net.sdnet "
+      vtc=$((3600*24*400)); vfc=0.65; vtw=$(echo "$vtc*$vfc*$vfc*$vfc"|bc -l)
+      sharedoptions="--verbose 2 --input data/$net.sdnet --timecontraction $vtc"
+      if [ -f data/$net.sdnet.gz ]; then gunzip -c data/$net.sdnet.gz > data/$net.sdnet; fi
+      time ./visualize_tweets_finitefile --viztype fastviz $sharedoptions --maxvisualized 50 --forgetconst $vfc --edgemin 20 --forgetevery 10 --output "data/${net}_fastviz" --label1 "words from" --label2 "patent titles" > logs/diffnet_${net}_fastviz.log &
+      time ./visualize_tweets_finitefile $sharedoptions --maxvisualized 50 --viztype timewindow --maxstored 10000 --timewindow $vtw --edgemin 20 --output "data/${net}_timewindow" --label1 "words from" --label2 "patent titles" > logs/diffnet_${net}_timewindow.log
+
+      net=imdb; echo -n "data/$net.sdnet "
+      vtc=$((3600*24*365*3)); vfc=0.75; vtw=$(echo "$vtc*$vfc*$vfc*$vfc"|bc -l)
+      sharedoptions="--verbose 2 --input data/$net.sdnet --timecontraction $vtc"
+      if [ -f data/$net.sdnet.gz ]; then gunzip -c data/$net.sdnet.gz > data/$net.sdnet; fi
+      time ./visualize_tweets_finitefile --viztype fastviz $sharedoptions --maxvisualized 80 --forgetconst $vfc --edgemin 10 --forgetevery 10 --output "data/${net}_fastviz" --weighttype 2 --label1 "plot keywords" --label2 "of movies" > logs/diffnet_${net}_fastviz.log &
+      time ./visualize_tweets_finitefile $sharedoptions --maxvisualized 80 --viztype timewindow --maxstored 10000 --timewindow $vtw 0.75 --edgemin 10 --output "data/${net}_timewindow" --weighttype 2 --label1 "plot keywords" --label2 "of movies" > logs/diffnet_${net}_timewindow.log
 
       echo
       echo "Please wait until finished..."
       wait
       echo "Finished. Differential networks in json format are saved in the 'data' subdirectory and logs are saved in the 'logs' subdirectory."
       ;;
-   "test-mini" )
+   "debug" )
       echo -n "Launched generation of differential network files "
-      
-      net="test-mini"; echo -n "data/$net.sdnet "
+
+      net="debug"; echo -n "data/$net.sdnet "
       if [ -f data/$net.sdnet.gz ]; then gunzip -c data/$net.sdnet.gz > data/$net.sdnet; fi
-      time ./visualize_tweets_finitefile --verbose 3 --viztype fastviz --input data/$net.sdnet --timecontraction 30 --maxvisualized 50 --forgetconst 1.0 --edgemin 0.95 --forgetevery 40 --output data/$net
-      time ./visualize_tweets_finitefile --verbose 3 --viztype timewindow --input data/$net.sdnet --timecontraction 30 --maxvisualized 50 --forgetconst 0.6 --edgemin 0.95 --forgetevery 40 --output data/$net
+      time ./visualize_tweets_finitefile --verbose 3 --viztype fastviz --input data/$net.sdnet --timecontraction 30 --maxvisualized 50 --forgetconst 1.0 --edgemin 0.95 --forgetevery 40 --output "data/${net}_fastviz"
+      time ./visualize_tweets_finitefile --verbose 3 --viztype timewindow --input data/$net.sdnet --timecontraction 30 --maxvisualized 50 --timewindow 2000 --edgemin 0.95 --output "data/${net}_timewindow"
 
       echo
       echo "Please wait until finished..."

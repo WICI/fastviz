@@ -25,9 +25,8 @@ using namespace std;
 class net_collector_timewindow : public net_collector_base {
 public:
    
-   net_collector_timewindow (const unsigned maxstored, long timewindow, 
+   net_collector_timewindow (const unsigned maxstored, double timewindow, 
    		clock_collectors &mycc) :net_collector_base(maxstored) {
-      lastassignedpos=-1;
       verbose=1;
       myclockcollector=&mycc;
       this->timewindow=timewindow;
@@ -48,10 +47,23 @@ public:
       unsigned pos1, pos2;
       double weight;
       
-   	erase_collector_base_content();
+      // reset the base collector
+   	reset_collector_base_content();
       apply_time_window(timewindow);
 
+      // prepare helper containers and functions
+      unordered_map <string, unsigned long> namepos;
+      unsigned long lastassignedpos=-1;         
+      auto insert_to_namepos = [&](string name) {
+         unordered_map<string, unsigned long>::const_iterator found = 
+            namepos.find(name);
+         if (found==namepos.end())
+            namepos[name]=(++lastassignedpos);
+      };
+
+      // fill the base collector with the data
       list<link_timed>::iterator it;
+      unsigned links_omited=0;
       for (it=latest.begin(); it!=latest.end(); it++) {
          name1 = it->name1;
          name2 = it->name2;
@@ -61,7 +73,7 @@ public:
          pos1 = namepos[name1];
          pos2 = namepos[name2];
          if (pos1>=maxstored || pos2>=maxstored) {
-            cout<<"Warning: maxstored reached, some nodes will not be stored.";
+            links_omited++;
             continue;
          }
          else {
@@ -73,18 +85,17 @@ public:
             names[pos2] = name2;
          }
       }
+      if (links_omited>0)
+         cout<<"Warning: maxstored reached, "<<links_omited<<"."<<endl;
+
    }
    
+   // no forgetting for this method
+   void forget_connections (double forgetfactor) {}
+
 private:
 
-   void insert_to_namepos(string name) {
-      unordered_map<string, unsigned long>::const_iterator found = 
-         namepos.find(name);
-      if (found==namepos.end())
-         namepos[name]=(++lastassignedpos);
-   }
-
-   void apply_time_window (long timewindow) {
+   void apply_time_window (double timewindow) {
       long latesttime=latest.back().ts;
       list<link_timed>::iterator limitingit=latest.begin();
       while(latesttime - limitingit->ts > timewindow) limitingit++;
@@ -92,9 +103,7 @@ private:
    }
 
    list <link_timed> latest;
-   unordered_map <string, unsigned long> namepos;
-   unsigned long lastassignedpos;
-   long timewindow;
+   double timewindow;
    clock_collectors *myclockcollector;
    unsigned verbose;
 };
