@@ -19,13 +19,12 @@ using namespace std;
 
 class viz_selector_base {
 public:
-	virtual void draw (const unsigned maxvisualized, double edgeminweight, 
-                      string excluded="",
-							 double r=0.5, double g=0.5, double b=0.5) {};
+	virtual void draw (const unsigned maxvisualized, double edgeminweight,
+                      string excluded="", bool hide_singletons=true) {};
 
 	void add_labels(string datetime="",
-                   string label1="", 
-                   string label2="", 
+                   string label1="",
+                   string label2="",
 						 string producer="") {
 		oc->set_attributes( "label",datetime);
 		oc->add_label("datetime");
@@ -36,25 +35,25 @@ public:
 		oc->set_attributes( "label",producer, "x",1050, "y",715, "size",20 );
 		oc->add_label("producer");
 	}
-	
+
 	void change_label_datetime(string datetime) {
 		oc->set_attributes( "label",datetime);
 		oc->change_label("datetime");
 	}
-	
+
    // get aggregated statistics
    virtual long get_how_many_drawn()  {};
 	unsigned get_nodes_visualized(){ return nodes_visualized; }
 	unsigned get_nodes_not_visualized(){ return nodes_not_visualized; }
 	double get_total_score(){ return total_score; }
-   
+
 protected:
-	
+
    // create a list of all stored nodes sorted by strength and select the strongest
 	template <class T0>
-	void select_nodes(net_collector_base *network, const unsigned maxvisualized, 
-							vector <T0> &vntmp, double edgeminweight, 
-							string excluded="" ) {
+	void select_nodes(net_collector_base *network, const unsigned maxvisualized,
+							vector <T0> &vntmp, double edgeminweight,
+							string excluded="", bool hide_singletons=true ) {
 		// get all buffered nodes and sort them by strength
 		vector<T0> bnodes;
 		T0 tmpnode;
@@ -80,45 +79,54 @@ protected:
 		if (bnodes.size()>maxvisualized) currvisualized=maxvisualized;
 		else currvisualized=bnodes.size();
 		{vector <T0> bnstrongest(bnodes.end()-currvisualized,bnodes.end());
-		
+
 		// filter out singletons, and late excluded node
 		nodes_visualized=nodes_not_visualized=total_score=0;
 		for (int i=0; i<bnstrongest.size(); i++) {
 			int edges=0;
-			for (int j=0; j<bnstrongest.size(); j++) if (i!=j) { 
+			for (int j=0; j<bnstrongest.size(); j++) if (i!=j) {
 				double weight = network->net[bnstrongest[i].pos][bnstrongest[j].pos];
 				total_score+=weight;
 				edges+=(weight>edgeminweight);
 			}
-			if (edges>0 && bnstrongest[i].nm!=excluded ) {
-				vntmp.push_back(bnstrongest[i]);
-				nodes_visualized++;
+			if ( bnstrongest[i].nm!=excluded ) {
+				if (hide_singletons) {
+					if (edges>0) {
+						vntmp.push_back(bnstrongest[i]);
+						nodes_visualized++;
+					}
+					else nodes_not_visualized++;
+				}
+				else {
+					vntmp.push_back(bnstrongest[i]);
+					nodes_visualized++;
+				}
 			}
 			else nodes_not_visualized++;
 		}}
-		
+
 		// sort according to the name in order to compare with previous state
 		sort ( vntmp.begin(), vntmp.end() );
 	}
-	
-   
+
+
    // clears ids of the edges removed from the visualization
    // eidm is a matrix of size of net matrix, to save processor time,
    // it could be implemented differently, now it's very memory expensive
 	template <class T0, class T1>
-	static void clean_edgeids(T0 &prevvisn, T1 &eidm, 
+	static void clean_edgeids(T0 &prevvisn, T1 &eidm,
 			typename T0::iterator &node_deleted) {
 		for (int i=0; i<prevvisn.size(); i++) {
 			eidm[node_deleted->pos][prevvisn[i].pos]=0;
 			eidm[prevvisn[i].pos][node_deleted->pos]=0;
 		}
 	}
-	
-   // makes differential comparison of prevvisn and vntmp, 
+
+   // makes differential comparison of prevvisn and vntmp,
    // namely of what has been visualized and what will
    // be visualized, and sends the changes to the output client
 	template <class T1, class T2, class T3, class F>
-	void adddelete_nodes(T1 &prevvisn, T2 &vntmp, T3 &eidm, 
+	void adddelete_nodes(T1 &prevvisn, T2 &vntmp, T3 &eidm,
 			F cleaner_function ) {
 		typedef typename T1::iterator ittype1;
 		typedef typename T2::iterator ittype2;
@@ -142,10 +150,10 @@ protected:
 			else if ((*first2).nm<(*first1).nm) {
 				oc->set_attributes("r",1, "g",1, "b",0, "label",(*first2).nm);
 				oc->add_node((*first2).nm);
-				++first2;						
+				++first2;
 			}
-         // update outgoing edge weights of the node     
-			else {				
+         // update outgoing edge weights of the node
+			else {
 				first1++; first2++;
 			}
 		}
@@ -159,10 +167,10 @@ protected:
 		while (first2!=last2) {
 			oc->set_attributes("r",1, "g",1, "b",0, "label",(*first2).nm);
 			oc->add_node((*first2).nm);
-			++first2;						
-		}		
+			++first2;
+		}
 	}
-	
+
    // sends to the output client changes in node sizes and colors
 	template <class T0>
 	void change_nodes(net_collector_base *network, T0 &visn, string excluded="") {
@@ -175,33 +183,33 @@ protected:
 			oc->change_node((*i).nm);
 		}
 	}
-	
+
 	template <class T0>
 	static unsigned extract_position(const T0 &node_object) {
 		return node_object.pos;
 	}
-	
+
    // sends to the output client changes in edge weights and colors
 	template <class T0, class T1, class F>
-	void change_edges(net_collector_base *network, T0 &visn, 
-							T1 &eidm, F extractpos, double edgeminweight=0.0001, 
+	void change_edges(net_collector_base *network, T0 &visn,
+							T1 &eidm, F extractpos, double edgeminweight=0.0001,
 							double r=0.5, double g=0.5, double b=0.5) {
 		typedef typename T0::iterator itype;
 		for (itype i=visn.begin(); i!=visn.end(); i++)
 			for (itype j=visn.begin(); j!=visn.end(); j++) {
-				if (network->net[extractpos(*i)][extractpos(*j)]>edgeminweight) 
+				if (network->net[extractpos(*i)][extractpos(*j)]>edgeminweight)
 				if (i!=j) {
 					if (eidm[extractpos(*i)][extractpos(*j)]) {
 						oc->set_attributes(
-							"weight",network->net[extractpos(*i)][extractpos(*j)], 
+							"weight",network->net[extractpos(*i)][extractpos(*j)],
 							"r",r, "g",g, "b",b );
 						oc->change_edge( eidm[extractpos(*i)][extractpos(*j)] );
 					}
 					else {
-						oc->set_attributes( 
-							"source",(*i).nm, 
+						oc->set_attributes(
+							"source",(*i).nm,
 							"target",network->names[extractpos(*j)],
-							"directed",false, 
+							"directed",false,
 							"weight",network->net[extractpos(*i)][extractpos(*j)],
 							"r",r, "g",g, "b",b );
 						oc->add_edge( eid );
@@ -227,9 +235,9 @@ private:
 
 class viz_selector: public viz_selector_base {
 public:
-   
-	viz_selector (net_collector_base &mynet, client_base &client, 
-			clock_collectors &mycc, int verbose) : 
+
+	viz_selector (net_collector_base &mynet, client_base &client,
+			clock_collectors &mycc, int verbose) :
 			eidm(mynet.maxstored, vector <unsigned long> (mynet.maxstored,0)) {
 		network=&mynet;
 		oc=&client;
@@ -237,56 +245,57 @@ public:
 		eid=1;
 		this->verbose=verbose;
 	}
-	
-	
+
+
    // the main method, calling all the private methods
-	void draw (const unsigned maxvisualized, double edgeminweight, 
-               string excluded="", double r=0.5, double g=0.5, double b=0.5) {
+	void draw (const unsigned maxvisualized, double edgeminweight,
+               string excluded="", bool hide_singletons=true ) {
 		if (verbose>5) cout<<"___________________________________________"<<endl;
-		
-		// selects nodes from network, removes singletons, sorts them, and 
+
+		// selects nodes from network, removes singletons, sorts them, and
 		// puts them into vntmp
 		vector<node_the> vntmp;
-		select_nodes(network, maxvisualized, vntmp, edgeminweight, excluded );
+		select_nodes(network, maxvisualized, vntmp, edgeminweight,
+			excluded, hide_singletons );
 		myclockcollector->collect("TTTTselect_nodes");
-		
+
 		// no idea what this shit does
-		adddelete_nodes(prevvisn, vntmp, eidm, 
+		adddelete_nodes(prevvisn, vntmp, eidm,
 			clean_edgeids < vector <node_the>, vector <vector <unsigned long> > > );
 		if (verbose>5) {
-			for (int i=0; i<prevvisn.size(); i++) cout<<prevvisn[i].nm<<" "; 
+			for (int i=0; i<prevvisn.size(); i++) cout<<prevvisn[i].nm<<" ";
 				cout<<endl;
-			for (int i=0; i<vntmp.size(); i++) cout<<vntmp[i].nm<<" "; 
+			for (int i=0; i<vntmp.size(); i++) cout<<vntmp[i].nm<<" ";
 				cout<<endl;
 			cout<<endl;
 		}
 		myclockcollector->collect("TTTTadddelete_nodes");
 
 		change_nodes( network, vntmp, excluded );
-		change_edges( network, vntmp, eidm, extract_position<node_the>, 
+		change_edges( network, vntmp, eidm, extract_position<node_the>,
 						  edgeminweight, 0.4, 0.6, 0.8 );
    	if (verbose>0) allnodes_drawn.insert( vntmp.begin(), vntmp.end() );
 		swap(prevvisn,vntmp);
-		myclockcollector->collect("TTTTupdate_nodes_edges");		
-      
+		myclockcollector->collect("TTTTupdate_nodes_edges");
+
 		oc->update();
 		myclockcollector->collect("TTTTgcupdate");
 
 	}
-	
+
    // get aggregated statistics
    long get_how_many_drawn() { return allnodes_drawn.size(); }
 
 private:
 	net_collector_base *network;
-	
+
    // main containers
 	vector <node_the> prevvisn;
 	vector <vector <unsigned long> > eidm;
-   
+
    // used only for the purpose of aggregated statistics
    set <node_the> allnodes_drawn;
-   
+
 	clock_collectors *myclockcollector;
 };
 

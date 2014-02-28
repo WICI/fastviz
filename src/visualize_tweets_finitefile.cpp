@@ -102,9 +102,10 @@ int do_filter( int verbose, string viztype,
                string output, string server,
                const unsigned maxstored, const unsigned maxvisualized,
                unsigned forgetevery, double forgetconst,
-               double timewindow,
-               double edgemin, string label1, string label2,
-               unsigned timecontraction, unsigned fps, int weighttype
+               double timewindow, double edgemin,
+               string label1, string label2, string label3,
+               string hidden_node, bool hide_singletons,
+               unsigned timecontraction, unsigned fps
                ) {
    // system signals handlers
    signal(SIGINT, handle_kill);
@@ -121,7 +122,7 @@ int do_filter( int verbose, string viztype,
    {
       static char bufch[100000];
       inputnet.getline(bufch,100000);
-      if (inputformat=="weighthed")
+      if (inputformat=="weighted")
          get_weighted_linkpack(bufch, linkpack, weight, linktime);
       else
          get_linkpack(bufch, linkpack, linktime);
@@ -147,13 +148,15 @@ int do_filter( int verbose, string viztype,
    cout<<"  maxvisualized: "<<maxvisualized<<endl;
    cout<<"  forgetevery: "<<forgetevery<<endl;
    cout<<"  forgetconst: "<<forgetconst<<endl;
-   cout<<"  timewindow: "<<forgetconst<<endl;
+   cout<<"  timewindow: "<<timewindow<<endl;
    cout<<"  edgemin: "<<edgemin<<endl;
    cout<<"  label1: "<<label1<<endl;
    cout<<"  label2: "<<label2<<endl;
+   cout<<"  label3: "<<label3<<endl;
+   cout<<"  hidden_node: "<<hidden_node<<endl;
+   cout<<"  hide_singletons: "<<hide_singletons<<endl;
    cout<<"  timecontraction: "<<timecontraction<<endl;
    cout<<"  fps: "<<fps<<endl;
-   cout<<"  weighttype: "<<weighttype<<endl;
 
    cout<<"Derived:"<<endl;
    cout<<"  interval: "<<upd_interval<<endl;
@@ -196,12 +199,13 @@ int do_filter( int verbose, string viztype,
 
    if (server=="")
       myviz->add_labels( pt::to_simple_string(pt::from_time_t(linktime)),
-                        label1, label2, "WICI data challenge" );
+                        label1, label2, label3 );
 
    //=====================================================================
    // time to start
    //=====================================================================
    long total_read = 0, total_links = 0, total_malformed = 0;
+   double total_score;
    int line=1, frame=0;
    long ts;
 
@@ -229,8 +233,11 @@ int do_filter( int verbose, string viztype,
          {
             myclockcollector.collect("TTTTadd_linkpack");
             total_links+=(linkpack.size()-1)*linkpack.size();
-            if ( linkpack.size()>1 )
-               mynet->add_linkpack( linkpack, weighttype, linktime );
+            if ( linkpack.size()>1 ) {
+               unsigned nodes = linkpack.size();
+               total_score += weight * nodes * (nodes-1);
+               mynet->add_linkpack( linkpack, weight, linktime );
+            }
          }
          if (verbose>1) {
             all_nodes.insert( linkpack.begin(), linkpack.end() );
@@ -268,7 +275,7 @@ int do_filter( int verbose, string viztype,
          }
          linkpack.clear();
          prev_linktime=linktime;
-         if (inputformat=="weighthed")
+         if (inputformat=="weighted")
             get_weighted_linkpack(bufch, linkpack, weight, linktime);
          else
             get_linkpack(bufch, linkpack, linktime);
@@ -283,7 +290,10 @@ int do_filter( int verbose, string viztype,
       // forgetting
       //=====================================================================
       //if (total_links%10==0)
-      if (frame%forgetevery==0) mynet->forget_connections(forgetconst);
+      if (forgetevery>0) if (frame%forgetevery==0) {
+         mynet->forget_connections(forgetconst);
+         total_score *= forgetconst;
+      }
       myclockcollector.collect("TTTTnonmatchingkeywords+forgetting");
 
       //=====================================================================
@@ -295,7 +305,7 @@ int do_filter( int verbose, string viztype,
 
       // update adjeciency matric if needed and draw
       mynet->update_net_collector_base();
-      myviz->draw(maxvisualized, edgemin, label2);
+      myviz->draw(maxvisualized, edgemin, hidden_node, hide_singletons);
 
       // debugging
       if (verbose>2) if (frame%50==0) {
@@ -310,15 +320,20 @@ int do_filter( int verbose, string viztype,
 
       // output additional statistics
       if (verbose>0) if (frame%50==0) {
-         auto nodes_number = mynet->get_nodes_number();
-         auto total_score = mynet->get_total_score();
+         auto nodes_encountered = all_nodes.size();
+         auto score_encountered = total_score;
+         auto nodes_buffered = mynet->get_nodes_number();
+         auto score_buffered = mynet->get_total_score();
          auto nodes_visualized = myviz->get_nodes_visualized();
-         auto nodes_not_visualized = myviz->get_nodes_not_visualized();
-         auto total_score_viz = myviz->get_total_score();
-         printf("Frame stats: nodes buffered=%5d, total score=%5.0f, "
-            "nodes visualized=%4d, not=%4d, total score=%4.0f.\n",
-            nodes_number, total_score,
-            nodes_visualized, nodes_not_visualized, total_score_viz);
+         auto score_visualized = myviz->get_total_score();
+         auto nodes_hidden = myviz->get_nodes_not_visualized();
+         printf("Frame stats:"
+            "nodes_encountered=%6d, score_encountered=%6.0f, "
+            "nodes_buffered=%6d, score_buffered=%6.0f, "
+            "nodes_visualized=%6d, score_visualized=%6.0f, nodes_hidden=%6d.\n",
+            nodes_encountered, score_encountered,
+            nodes_buffered, score_buffered,
+            nodes_visualized, score_visualized, nodes_hidden);
       }
 
       // sleep if gephi server is specified to in between sent events
@@ -362,7 +377,7 @@ int main(int argc, char** argv) {
       ("help", "show options")
       ("verbose", po::value<int>()->default_value(1), "")
       ("viztype", po::value<string>()->default_value("fastviz"),
-         "Possible visualization types: fastviz (default), time-window")
+         "Possible visualization types: fastviz (default), timewindow")
       ("input", po::value<string>()->default_value(""),"")
       ("inputformat", po::value<string>()->default_value(""),"")
       ("output", po::value<string>()->default_value(""), "")
@@ -381,9 +396,13 @@ int main(int argc, char** argv) {
       ("edgemin", po::value<double>()->default_value(0.95), "")
       ("label1", po::value<string>()->default_value(""),"")
       ("label2", po::value<string>()->default_value(""),"")
+      ("label3", po::value<string>()->default_value(""),"")
+      ("hide_node", po::value<string>()->default_value(""),
+         "Hide given node in the visualizations")
+      ("hide_singletons", po::value<bool>()->default_value("true"),
+         "Hide nodes without edges in the visualization")
       ("timecontraction", po::value<unsigned>()->default_value(3600), "")
       ("fps", po::value<unsigned>()->default_value(30), "")
-      ("weighttype", po::value<int>()->default_value(1), "")
       ;
 
    po::variables_map vm;
@@ -413,19 +432,24 @@ int main(int argc, char** argv) {
    unsigned maxstored = vm["maxstored"].as<unsigned>();
    unsigned maxvisualized = vm["maxvisualized"].as<unsigned>();
    unsigned forgetevery = vm["forgetevery"].as<unsigned>();
+   if (viztype=="timewindow") forgetevery=0;
    double forgetconst = vm["forgetconst"].as<double>();
    double timewindow = vm["timewindow"].as<double>();
    double edgemin = vm["edgemin"].as<double>();
    string label1 = vm["label1"].as<string>();
    string label2 = vm["label2"].as<string>();
+   string label3 = vm["label3"].as<string>();
+   string hidden_node = vm["hide_node"].as<string>();
+   bool hide_singletons = vm["hide_singletons"].as<bool>();
    unsigned timecontraction = vm["timecontraction"].as<unsigned>();
    unsigned fps = vm["fps"].as<unsigned>();
-   int weighttype = vm["weighttype"].as<int>();
 
    do_filter( verbose, viztype, input, inputformat, output, server,
               maxstored, maxvisualized,
-              forgetevery, forgetconst, timewindow, edgemin, label1, label2,
-              timecontraction, fps, weighttype
+              forgetevery, forgetconst, timewindow, edgemin,
+              label1, label2, label3,
+              hidden_node, hide_singletons,
+              timecontraction, fps
               );
    return 0;
 }

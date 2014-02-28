@@ -14,7 +14,7 @@ class net_collector_base {
 public:
 
 	net_collector_base (const unsigned maxstored)
-		:names(maxstored), net(maxstored, vector <double> (maxstored,0)), 
+		:names(maxstored), net(maxstored, vector <double> (maxstored,0)),
 		maxstored(maxstored) {}
 
 	void reset_collector_base_content () {
@@ -38,11 +38,12 @@ public:
 		return result;
    }
 
-   virtual void add_linkpack (vector <string> &linkpack, double weight, long ts) = 0;
+   virtual void add_linkpack (
+   	vector <string> &linkpack, double weight, long ts) = 0;
    virtual void update_net_collector_base () = 0;
    virtual void forget_connections (double forgetfactor) = 0;
 
-	const unsigned maxstored; // 20000 corresponds to around 4gb of memory 
+	const unsigned maxstored; // 20000 corresponds to around 4gb of memory
 	vector <string> names;
 	vector <vector <double> > net;
 

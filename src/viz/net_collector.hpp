@@ -29,21 +29,21 @@ public:
 			myclockcollector=&mycc;
 	}
 
-	void add_linkpack (vector <string> &linkpack, double weighttype=1,
+	void add_linkpack (vector <string> &linkpack, double weight=1,
 			long ts=-1) {
 		typedef typename vector <string>::const_iterator ittype;
 
 		double m=linkpack.size();
 		vector<set<node_base>::iterator> toupdate(m);
-		double edgeincrement; //edge score
+		double edgeincrement = weight; //edge score
 		double nodeincrement; //node score
 
-		// if (weighttype==1) { edgeincrement=2.0/(m-1)/m; nodeincrement=2.0/m; }
-		// if (weighttype==2) { edgeincrement=1.0/m; nodeincrement=1.0; }
-		// if (weighttype==3) { edgeincrement=2.0/sqrt(m-1)/sqrt(m); nodeincrement=2.0/sqrt(m); }
+		// if (weight==1) { edgeincrement=2.0/(m-1)/m; nodeincrement=2.0/m; }
+		// if (weight==2) { edgeincrement=1.0/m; nodeincrement=1.0; }
+		// if (weight==3) { edgeincrement=2.0/sqrt(m-1)/sqrt(m); nodeincrement=2.0/sqrt(m); }
 
-		if (weighttype==1) edgeincrement=2.0/(m-1)/m;
-		if (weighttype==2) edgeincrement=2.0/(m-1);
+		// if (weight==1) edgeincrement=2.0/(m-1)/m;
+		// if (weight==2) edgeincrement=2.0/(m-1);
 
 		nodeincrement = edgeincrement*(m-1);
 

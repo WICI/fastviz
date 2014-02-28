@@ -18,6 +18,55 @@ function print_description {
    echo "           requires preparation steps described in README.md"
 }
 
+function get_shared_opts {
+   if [ ! -f data/$net.wdnet ]; then
+      gunzip -c data/$net.wdnet.gz > data/$net.wdnet;
+   fi
+   local shared_opts="--verbose 2 --inputformat weighted --input data/$net.wdnet"
+   shared_opts+=" --timecontraction $vtc --edgemin $edgemin"
+   if [ "$net" == "osama" ]; then
+      shared_opts+=" --label1 'death of' --label2 'Osama bin Laden'"
+   fi
+   if [ "$net" == "superbowl" ]; then
+      shared_opts+=" --label1 'hashtags during the' --label2 '#superbowl'"
+   fi
+   if [ "$net" == "patents_full" ]; then
+      shared_opts+=" --label1 'words from' --label2 'patent titles'"
+   fi
+   if [ "$net" == "imdb" ]; then
+      shared_opts+=" --label1 'plot keywords' --label2 'of movies'"
+   fi
+   echo $shared_opts
+}
+
+function run_fastviz {
+   local shared_opts="$(get_shared_opts) $1"
+   local viztype_opts="--viztype fastviz --forgetconst $vfc"
+   local output_suffix="_fastviz"
+   if [[ $1 == *"--hide_singletons off"* ]]; then
+      output_suffix+="_withsingletons";
+   fi
+   viztype_opts+=" --output data/${net}${output_suffix}"
+   # echo "./visualize_tweets_finitefile $shared_opts $viztype_opts"
+   ./visualize_tweets_finitefile $shared_opts $viztype_opts\
+      > logs/diffnet_${net}${output_suffix}.log
+}
+
+function run_timewindow {
+   local shared_opts="$(get_shared_opts) $1"
+   local vtw=$(echo "scale=0; $vtc/(1.0-$vfc)/3.0"|bc -l)
+   local viztype_opts="--viztype timewindow --maxstored 10000 --timewindow $vtw"
+   local output_suffix="_timewindow"
+   if [[ $1 == *"--hide_singletons off"* ]]; then
+      output_suffix+="_withsingletons";
+   fi
+   viztype_opts+=" --output data/${net}${output_suffix}"
+   # echo "./visualize_tweets_finitefile $shared_opts $viztype_opts"
+   ./visualize_tweets_finitefile $shared_opts $viztype_opts\
+      > logs/diffnet_${net}${output_suffix}.log
+}
+
+
 if [ "$1" == "" ]; then
    print_description
 else
@@ -58,25 +107,23 @@ else
    "demo-diffnets" )
       echo -n "Launched generation of differential network files "
 
-      net=osama; echo -n "data/$net.sdnet "
-      if [ -f data/$net.sdnet.gz ]; then gunzip -c data/$net.sdnet.gz > data/$net.sdnet; fi
-      time ./visualize_tweets_finitefile --verbose 2 --input data/$net.sdnet --timecontraction 500 --maxvisualized 50 --forgetconst 0.6 --edgemin 0.95 --forgetevery 40 --output "data/${net}" --label1 "death of" --label2 "Osama bin Laden" > logs/diffnet_$net.log &
+      # net=osama; echo -n "data/$net.sdnet "
+      # if [ -f data/$net.sdnet.gz ]; then gunzip -c data/$net.sdnet.gz > data/$net.sdnet; fi
+      # time ./visualize_tweets_finitefile --verbose 2 --input data/$net.sdnet --timecontraction 500 --maxvisualized 50 --forgetconst 0.6 --edgemin 0.95 --forgetevery 40 --output "data/${net}" --label1 "death of" --label2 "Osama bin Laden" > logs/diffnet_$net.log &
 
-      net=superbowl; echo -n "data/$net.sdnet "
-      if [ -f data/$net.sdnet.gz ]; then gunzip -c data/$net.sdnet.gz > data/$net.sdnet; fi
-      time ./visualize_tweets_finitefile --verbose 2 --input data/$net.sdnet --timecontraction 3600 --maxvisualized 50 --forgetconst 0.6 --edgemin 10.0 --forgetevery 20 --output "data/${net}" --label1 "hashtags during the" --label2 "#superbowl" > logs/diffnet_$net.log &
+      # net=superbowl; echo -n "data/$net.sdnet "
+      # if [ -f data/$net.sdnet.gz ]; then gunzip -c data/$net.sdnet.gz > data/$net.sdnet; fi
+      # time ./visualize_tweets_finitefile --verbose 2 --input data/$net.sdnet --timecontraction 3600 --maxvisualized 50 --forgetconst 0.6 --edgemin 10.0 --forgetevery 20 --output "data/${net}" --label1 "hashtags during the" --label2 "#superbowl" > logs/diffnet_$net.log &
 
-      net=patents_full; echo -n "data/$net.sdnet "
-      if [ -f data/$net.sdnet.gz ]; then gunzip -c data/$net.sdnet.gz > data/$net.sdnet; fi
-      time ./visualize_tweets_finitefile --verbose 2 --input data/$net.sdnet --timecontraction $((3600*24*400)) --maxvisualized 50 --forgetconst 0.65 --edgemin 20 --forgetevery 10 --output "data/${net}" --label1 "words from" --label2 "patent titles" > logs/diffnet_$net.log &
+      # net=patents_full; echo -n "data/$net.sdnet "
+      # if [ -f data/$net.sdnet.gz ]; then gunzip -c data/$net.sdnet.gz > data/$net.sdnet; fi
+      # time ./visualize_tweets_finitefile --verbose 2 --input data/$net.sdnet --timecontraction $((3600*24*400)) --maxvisualized 50 --forgetconst 0.65 --edgemin 20 --forgetevery 10 --output "data/${net}" --label1 "words from" --label2 "patent titles" > logs/diffnet_$net.log &
 
-      net=imdb; echo -n "data/$net.sdnet "
-      if [ -f data/$net.sdnet.gz ]; then gunzip -c data/$net.sdnet.gz > data/$net.sdnet; fi
-      time ./visualize_tweets_finitefile --verbose 2 --input data/$net.sdnet --timecontraction $((3600*24*365*3)) --maxvisualized 80 --forgetconst 0.75 --edgemin 10 --forgetevery 10 --output "data/${net}" --weighttype 2 --label1 "plot keywords" --label2 "of movies" > logs/diffnet_$net.log &
+      # net=imdb; echo -n "data/$net.sdnet "
+      # if [ -f data/$net.sdnet.gz ]; then gunzip -c data/$net.sdnet.gz > data/$net.sdnet; fi
+      # time ./visualize_tweets_finitefile --verbose 2 --input data/$net.sdnet --timecontraction $((3600*24*365*3)) --maxvisualized 80 --forgetconst 0.75 --edgemin 10 --forgetevery 10 --output "data/${net}" --weighttype 2 --label1 "plot keywords" --label2 "of movies" > logs/diffnet_$net.log &
 
       echo
-      echo "Please wait until finished..."
-      wait
       echo "Finished. Differential networks in json format are saved in the 'data' subdirectory and logs are saved in the 'logs' subdirectory."
       ;;
    "demo-movies" )
@@ -88,7 +135,7 @@ else
       ;;
    "allmethods-movies" )
       echo "Launching generation of movies."
-      for myfile in data/*_{fastviz,timewindow}.json; do
+      for myfile in data/*_fastviz_nosingletons.json; do
          python scripts/DynamicGraph_wici.py $myfile
       done
       echo "Finished. Movies are saved in the 'movies' subdirectory."
@@ -96,37 +143,31 @@ else
    "allmethods-diffnets" )
       echo -n "Launched generation of differential network files "
 
-      net=osama; echo -n "data/$net.sdnet "
-      vtc=500; vfc=0.9; vtw=$(echo "scale=0; $vtc*$vfc*$vfc*$vfc"|bc -l)
-      sharedoptions="--verbose 2 --input data/$net.sdnet --timecontraction $vtc"
-      if [ -f data/$net.sdnet.gz ]; then gunzip -c data/$net.sdnet.gz > data/$net.sdnet; fi
-      time ./visualize_tweets_finitefile --viztype fastviz $sharedoptions --maxvisualized 50 --forgetconst $vfc --edgemin 0.95 --forgetevery 10 --output "data/${net}_fastviz" --label1 "death of" --label2 "Osama bin Laden" > logs/diffnet_${net}_fastviz.log &
-      time ./visualize_tweets_finitefile $sharedoptions --maxvisualized 50 --viztype timewindow --maxstored 10000 --timewindow $vtw --edgemin 0.95 --output "data/${net}_timewindow" --label1 "death of" --label2 "Osama bin Laden" > logs/diffnet_${net}_timewindow.log
+      net="osama"; vtc=500; vfc=0.9; edgemin=0.95
+      echo -n "data/$net.wdnet "
+      run_fastviz
+      run_fastviz "--hide_singletons off"
+      run_timewindow; wait
 
-      net=superbowl; echo -n "data/$net.sdnet "
-      vtc=3600; vfc=0.8; vtw=$(echo "$vtc*$vfc*$vfc*$vfc"|bc -l)
-      sharedoptions="--verbose 2 --input data/$net.sdnet --timecontraction $vtc"
-      if [ -f data/$net.sdnet.gz ]; then gunzip -c data/$net.sdnet.gz > data/$net.sdnet; fi
-      time ./visualize_tweets_finitefile --viztype fastviz $sharedoptions --maxvisualized 50 --forgetconst $vfc --edgemin 10.0 --forgetevery 10 --output "data/${net}_fastviz" --label1 "hashtags during the" --label2 "#superbowl" > logs/diffnet_${net}_fastviz.log &
-      time ./visualize_tweets_finitefile $sharedoptions --maxvisualized 50 --viztype timewindow --maxstored 10000 --timewindow $vtw --edgemin 10.0 --output "data/${net}_timewindow" --label1 "hashtags during the" --label2 "#superbowl" > logs/diffnet_${net}_timewindow.log
+      net="superbowl"; vtc=3600; vfc=0.8; edgemin=10.0
+      echo -n "data/$net.wdnet "
+      run_fastviz
+      run_fastviz "--hide_singletons off"
+      run_timewindow; wait
 
-      net=patents_full; echo -n "data/$net.sdnet "
-      vtc=$((3600*24*400)); vfc=0.65; vtw=$(echo "$vtc*$vfc*$vfc*$vfc"|bc -l)
-      sharedoptions="--verbose 2 --input data/$net.sdnet --timecontraction $vtc"
-      if [ -f data/$net.sdnet.gz ]; then gunzip -c data/$net.sdnet.gz > data/$net.sdnet; fi
-      time ./visualize_tweets_finitefile --viztype fastviz $sharedoptions --maxvisualized 50 --forgetconst $vfc --edgemin 20 --forgetevery 10 --output "data/${net}_fastviz" --label1 "words from" --label2 "patent titles" > logs/diffnet_${net}_fastviz.log &
-      time ./visualize_tweets_finitefile $sharedoptions --maxvisualized 50 --viztype timewindow --maxstored 10000 --timewindow $vtw --edgemin 20 --output "data/${net}_timewindow" --label1 "words from" --label2 "patent titles" > logs/diffnet_${net}_timewindow.log
+      net="patents_full"; vtc=$((3600*24*400)); vfc=0.65; edgemin=20
+      echo -n "data/$net.wdnet "
+      run_fastviz
+      run_fastviz "--hide_singletons off"
+      run_timewindow; wait
 
-      net=imdb; echo -n "data/$net.sdnet "
-      vtc=$((3600*24*365*3)); vfc=0.75; vtw=$(echo "$vtc*$vfc*$vfc*$vfc"|bc -l)
-      sharedoptions="--verbose 2 --input data/$net.sdnet --timecontraction $vtc"
-      if [ -f data/$net.sdnet.gz ]; then gunzip -c data/$net.sdnet.gz > data/$net.sdnet; fi
-      time ./visualize_tweets_finitefile --viztype fastviz $sharedoptions --maxvisualized 80 --forgetconst $vfc --edgemin 10 --forgetevery 10 --output "data/${net}_fastviz" --weighttype 2 --label1 "plot keywords" --label2 "of movies" > logs/diffnet_${net}_fastviz.log &
-      time ./visualize_tweets_finitefile $sharedoptions --maxvisualized 80 --viztype timewindow --maxstored 10000 --timewindow $vtw 0.75 --edgemin 10 --output "data/${net}_timewindow" --weighttype 2 --label1 "plot keywords" --label2 "of movies" > logs/diffnet_${net}_timewindow.log
+      net="imdb"; vtc=$((3600*24*365*3)); vfc=0.75; edgemin=10
+      echo -n "data/$net.wdnet "
+      run_fastviz
+      run_fastviz "--hide_singletons off"
+      run_timewindow; wait
 
       echo
-      echo "Please wait until finished..."
-      wait
       echo "Finished. Differential networks in json format are saved in the 'data' subdirectory and logs are saved in the 'logs' subdirectory."
       ;;
    "debug" )
@@ -138,8 +179,6 @@ else
       time ./visualize_tweets_finitefile --verbose 3 --viztype timewindow --input data/$net.sdnet --timecontraction 30 --maxvisualized 50 --timewindow 2000 --edgemin 0.95 --output "data/${net}_timewindow"
 
       echo
-      echo "Please wait until finished..."
-      wait
       echo "Finished. Differential networks in json format are saved in the 'data' subdirectory and logs are saved in the 'logs' subdirectory."
       ;;
    "gephi" )
@@ -151,7 +190,8 @@ else
          exit 1
       fi
       echo "Launching direct graph streaming to Gephi."
-      ./visualize_tweets_finitefile --verbose 2 --input $2 --server $3 --timecontraction $4
+      ./visualize_tweets_finitefile --verbose 2 --input $2 --server $3\
+          --timecontraction $4
       ;;
     * )
       echo "Option not recognized."
