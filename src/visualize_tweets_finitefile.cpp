@@ -330,10 +330,12 @@ int do_filter( int verbose, string viztype,
          printf("Frame stats:"
             "nodes_encountered=%6d, score_encountered=%6.0f, "
             "nodes_buffered=%6d, score_buffered=%6.0f, "
-            "nodes_visualized=%6d, score_visualized=%6.0f, nodes_hidden=%6d.\n",
+            "nodes_visualized=%6d, score_visualized=%6.0f, "
+            "nodes_hidden=%6d, %s.\n",
             nodes_encountered, score_encountered,
             nodes_buffered, score_buffered,
-            nodes_visualized, score_visualized, nodes_hidden);
+            nodes_visualized, score_visualized,
+            nodes_hidden, myviz->get_netsstats().c_str() );
       }
 
       // sleep if gephi server is specified to in between sent events

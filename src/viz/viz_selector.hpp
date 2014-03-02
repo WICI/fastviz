@@ -10,6 +10,9 @@
 #include <set>
 #include <vector>
 
+#include <igraph.h>
+
+#include <pms/std_to_igraph.cpp>
 #include <pms/clock_collector.hpp>
 #include <viz/client.hpp>
 #include <viz/node.hpp>
@@ -46,6 +49,7 @@ public:
 	unsigned get_nodes_visualized(){ return nodes_visualized; }
 	unsigned get_nodes_not_visualized(){ return nodes_not_visualized; }
 	double get_total_score(){ return total_score; }
+	string get_netsstats() {};
 
 protected:
 
@@ -281,6 +285,99 @@ public:
 		myclockcollector->collect("TTTTgcupdate");
 
 	}
+
+   // get networks statistics
+ 	string get_netsstats() {
+		igraph_t *g;
+		igraph_vector_t *weights;
+
+		// get the graph and the stats
+		netstats ns_buf;
+		vv_to_igraph(netcol->net, g, weights);
+		ns_buf = get_netstats(g, weights);
+
+		// get the graph and the stats
+		vector<unsigned> nodesdrawn;
+		for (set <node_the>::iterator it=allnodes_drawn.begin();
+				it!=allnodes_drawn.end(); it++)
+			nodesdrawn.push_back( it->pos );
+		netstats ns_viz;
+		sub_vv_to_igraph(netcol->net, nodesdrawn, g, weights);
+		ns_viz = get_netstats(g, weights);
+
+ 		char *output;
+		sprintf( output,
+            "avgdeg_buffered=%8.0f, avgdeg_visualized=%8.0f, "
+            "avgstr_buffered=%8.0f, avgstr_visualized=%8.0f, "
+            "ccglo_buffered=%6.3f, ccglo_visualized=%6.3f, "
+            "ccloc_buffered=%6.3f, ccloc_visualized=%6.3f, "
+            "assortativity_buffered=%6.3f, assortativity_visualized=%6.3f",
+            ns_buf.avgdeg, ns_viz.avgdeg,
+            ns_buf.avgstr, ns_viz.avgstr,
+            ns_buf.ccglo, ns_viz.ccglo,
+            ns_buf.ccloc, ns_viz.ccloc,
+            ns_buf.assortativity, ns_viz.assortativity );
+
+		return string(output);
+   }
+
+private:
+
+   struct netstats {
+   	netstats() {};
+   	netstats( double avgdeg, double avgstr, double ccglo, double ccloc,
+   			double assortativity){
+   		this->avgdeg = avgdeg;
+   		this->avgstr = avgstr;
+   		this->ccglo = ccglo;
+   		this->ccloc = ccloc;
+   		this->assortativity = assortativity;
+   	}
+   	double avgdeg, avgstr, ccglo, ccloc, assortativity;
+ 	   netstats& operator=(const netstats &other) {
+   		this->avgdeg = other.avgdeg;
+   		this->avgstr = other.avgstr;
+   		this->ccglo = other.ccglo;
+   		this->ccloc = other.ccloc;
+   		this->assortativity = other.assortativity;
+   	}
+   };
+
+   // get networks statistics
+ 	netstats get_netstats( igraph_t *g, igraph_vector_t *weights,
+ 			igraph_bool_t directed = false ) {
+
+		// get degree
+		igraph_real_t avgdeg;
+		igraph_vector_t *degrees;
+		igraph_degree( g, degrees, igraph_vss_all(), IGRAPH_ALL, directed);
+		for (int i=0; i<igraph_vector_size(degrees); i++)
+			avgdeg+=VECTOR(*degrees)[i];
+		avgdeg /= igraph_vector_size(degrees);
+
+		// get strength
+		igraph_real_t avgstr;
+		igraph_vector_t *strengths;
+		igraph_strength( g, strengths, igraph_vss_all(), IGRAPH_ALL, directed, weights);
+		for (int i=0; i<igraph_vector_size(strengths); i++)
+			avgstr+=VECTOR(*strengths)[i];
+		avgstr /= igraph_vector_size(strengths);
+
+		// get cc
+		igraph_real_t *ccglo;
+		igraph_transitivity_undirected( g, ccglo, IGRAPH_TRANSITIVITY_NAN );
+		igraph_real_t *ccloc;
+		igraph_transitivity_avglocal_undirected( g, ccloc,
+			IGRAPH_TRANSITIVITY_NAN );
+
+		// get assortativity
+		igraph_real_t *assortativity;
+		igraph_assortativity_nominal( g, degrees, assortativity, directed );
+
+		netstats output( (double)avgdeg, (double)avgstr,
+			(double)*ccglo, (double)*ccloc, (double)*assortativity);
+		return output;
+   }
 
    // get aggregated statistics
    long get_how_many_drawn() { return allnodes_drawn.size(); }

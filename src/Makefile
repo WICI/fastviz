@@ -11,17 +11,18 @@ CXX = g++
 RM = /bin/rm
 
 # -Wall
-CXXFLAGS = -O3 -std=c++11 -I. -I$(BOOST_SRC) -I$(CPPNET_SRC) -I $(JSON_SRC) -pthread
+CXXFLAGS += -ggdb -std=c++11 -I. -I$(BOOST_SRC) -I$(CPPNET_SRC) -I $(JSON_SRC) \
+			   -pthread -I/opt/local/include/igraph
 
-LDFLAGS = -L$(BOOST_BIN) -Wl,-rpath $(BOOST_BIN) \
+LDFLAGS += -L$(BOOST_BIN) -Wl,-rpath $(BOOST_BIN) \
           -L$(JSON_BIN) -Wl,-rpath $(JSON_BIN) \
-          -L$(CPPNET_BIN)
+          -L$(CPPNET_BIN) -L/opt/local/lib
 
-LDLIBS  = -lboost_program_options -lboost_filesystem -lboost_regex -lboost_chrono \
+LDLIBS  += -lboost_program_options -lboost_filesystem -lboost_regex -lboost_chrono \
           -lboost_date_time -lboost_system -lboost_thread \
           -lcppnetlib-client-connections -lcppnetlib-uri \
           -lcppnetlib-server-parsers -lssl -lcrypto \
-          -l$(JSON_LIBMT) -lm
+          -l$(JSON_LIBMT) -lm -ligraph
 
 OBJS =	util/format_time.o util/pace_checker.o \
 			viz/net_collector_timewindow.o viz/link.o
