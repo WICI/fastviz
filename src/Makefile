@@ -11,7 +11,7 @@ CXX = g++
 RM = /bin/rm
 
 # -Wall
-CXXFLAGS += -ggdb -std=c++11 -I. -I$(BOOST_SRC) -I$(CPPNET_SRC) -I $(JSON_SRC) \
+CXXFLAGS += -O3 -std=c++11 -I. -I$(BOOST_SRC) -I$(CPPNET_SRC) -I $(JSON_SRC) \
 			   -pthread -I/opt/local/include/igraph
 
 LDFLAGS += -L$(BOOST_BIN) -Wl,-rpath $(BOOST_BIN) \

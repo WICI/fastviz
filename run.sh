@@ -54,9 +54,16 @@ function run_fastviz {
 
 function run_timewindow {
    local shared_opts="$(get_shared_opts) $1"
-   local vtw=$(echo "scale=0; $vtc/(1.0-$vfc)/3.0"|bc -l)
-   local viztype_opts="--viztype timewindow --maxstored 10000 --timewindow $vtw"
    local output_suffix="_timewindow"
+   if [[ $1 != "" ]];
+      then
+         local vtwmultip=$1;
+         output_suffix+="_wide";
+      else
+         local vtwmultip=1;
+   fi
+   local vtw=$(echo "scale=0; $vtwmultip*$vtc/(1.0-$vfc)/3.0"|bc -l)
+   local viztype_opts="--viztype timewindow --maxstored 10000 --timewindow $vtw"
    if [[ $1 == *"--hide_singletons off"* ]]; then
       output_suffix+="_withsingletons";
    fi
@@ -147,39 +154,50 @@ else
       echo -n "data/$net.wdnet "
       run_fastviz
       run_fastviz "--hide_singletons off"
-      run_timewindow; wait
+      run_timewindow
+      run_timewindow 10
+      wait
 
       net="superbowl"; vtc=3600; vfc=0.8; edgemin=10.0
       echo -n "data/$net.wdnet "
       run_fastviz
       run_fastviz "--hide_singletons off"
-      run_timewindow; wait
+      run_timewindow
+      run_timewindow 10
+      wait
 
       net="patents_full"; vtc=$((3600*24*400)); vfc=0.65; edgemin=20
       echo -n "data/$net.wdnet "
       run_fastviz
       run_fastviz "--hide_singletons off"
-      run_timewindow; wait
+      run_timewindow
+      run_timewindow 10
+      wait
 
       net="imdb"; vtc=$((3600*24*365*3)); vfc=0.75; edgemin=10
       echo -n "data/$net.wdnet "
       run_fastviz
       run_fastviz "--hide_singletons off"
-      run_timewindow; wait
+      run_timewindow
+      run_timewindow 10
+      wait
 
       echo
       echo "Finished. Differential networks in json format are saved in the 'data' subdirectory and logs are saved in the 'logs' subdirectory."
       ;;
-   "debug" )
+   "debug-fastviz" )
       echo -n "Launched generation of differential network files "
-
       net="debug"; echo -n "data/$net.sdnet "
-      if [ -f data/$net.sdnet.gz ]; then gunzip -c data/$net.sdnet.gz > data/$net.sdnet; fi
-      time ./visualize_tweets_finitefile --verbose 3 --viztype fastviz --input data/$net.sdnet --timecontraction 30 --maxvisualized 50 --forgetconst 1.0 --edgemin 0.95 --forgetevery 40 --output "data/${net}_fastviz"
-      time ./visualize_tweets_finitefile --verbose 3 --viztype timewindow --input data/$net.sdnet --timecontraction 30 --maxvisualized 50 --timewindow 2000 --edgemin 0.95 --output "data/${net}_timewindow"
-
-      echo
-      echo "Finished. Differential networks in json format are saved in the 'data' subdirectory and logs are saved in the 'logs' subdirectory."
+      # verbose 3 prints graph properties
+      # verbose 4 prints adjeciency matrix and lists
+      time ./visualize_tweets_finitefile --verbose 4 --viztype fastviz --input data/$net.sdnet --timecontraction $((30*100)) --maxvisualized 5 --forgetconst 1.0 --edgemin 0.95 --forgetevery 40 --output "data/${net}_fastviz"
+      ;;
+   "debug-timewindow" )
+      echo -n "Launched generation of differential network files "
+      net="debug"; echo -n "data/$net.sdnet "
+      # verbose 3 prints graph properties
+      # verbose 4 prints adjeciency matrix and lists
+      time ./visualize_tweets_finitefile --verbose 4 --viztype timewindow --input data/$net.sdnet --timecontraction $((30*100)) --maxvisualized 50 --timewindow 30 --edgemin 0.95 --output "data/${net}_timewindow"
       ;;
    "gephi" )
       if [ "$2" == "" -o "$3" == "" -o "$4" == "" ]; then

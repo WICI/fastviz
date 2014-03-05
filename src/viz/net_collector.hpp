@@ -21,11 +21,12 @@ using namespace std;
 class net_collector : public net_collector_base {
 public:
 
-	net_collector (const unsigned maxstored, clock_collectors &mycc)
+	net_collector (const unsigned maxstored, clock_collectors &mycc,
+			unsigned verbose=1)
 		:net_collector_base(maxstored) {
 			minstr=1e100;
 			nstored=0;
-			verbose=1;
+     		this->verbose=verbose;
 			myclockcollector=&mycc;
 	}
 

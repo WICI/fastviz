@@ -191,9 +191,9 @@ int do_filter( int verbose, string viztype,
    viz_selector_base *myviz;
 
    if (viztype=="fastviz")
-      mynet=new net_collector( maxstored, myclockcollector );
+      mynet=new net_collector( maxstored, myclockcollector, verbose );
    else
-      mynet=new net_collector_timewindow( maxstored, timewindow,  myclockcollector );
+      mynet=new net_collector_timewindow( maxstored, timewindow,  myclockcollector, verbose );
 
    myviz=new viz_selector( *mynet, *myoutput, myclockcollector, verbose );
 
@@ -225,8 +225,8 @@ int do_filter( int verbose, string viztype,
 
          //TODO I'm not sure how much sense this has...
          pace_check.next_tweet(linktime);
-         myclockcollector.collect("TTTTdatareading");
 
+         myclockcollector.collect("TTTTdatareading");
          //=====================================================================
          // update information about stored nodes
          //=====================================================================
@@ -308,18 +308,19 @@ int do_filter( int verbose, string viztype,
       myviz->draw(maxvisualized, edgemin, hidden_node, hide_singletons);
 
       // debugging
-      if (verbose>2) if (frame%50==0) {
-         for (int i=0; i<10; i++) cout<<mynet->names[i]<<" ";
+      if (verbose>3) {
+         cout<<"mynet network (limited to 15x15 matrix):"<<endl;
+         for (int i=0; i<15; i++) cout<<mynet->names[i]<<" ";
          cout<<endl;
-         for (int i=0; i<10; i++) {
-            for (int j=0; j<10; j++)
+         for (int i=0; i<15; i++) {
+            for (int j=0; j<15; j++)
                cout<<mynet->net[i][j]<<" ";
             cout<<endl;
          }
       }
 
       // output additional statistics
-      if (verbose>0) if (frame%50==0) {
+      if ( (verbose>0 && frame%30==0) || verbose>2 ) {
          auto nodes_encountered = all_nodes.size();
          auto score_encountered = total_score;
          auto nodes_buffered = mynet->get_nodes_number();
@@ -327,6 +328,7 @@ int do_filter( int verbose, string viztype,
          auto nodes_visualized = myviz->get_nodes_visualized();
          auto score_visualized = myviz->get_total_score();
          auto nodes_hidden = myviz->get_nodes_not_visualized();
+         char netsstats[400]; myviz->get_netsstats(netsstats);
          printf("Frame stats:"
             "nodes_encountered=%6d, score_encountered=%6.0f, "
             "nodes_buffered=%6d, score_buffered=%6.0f, "
@@ -335,7 +337,7 @@ int do_filter( int verbose, string viztype,
             nodes_encountered, score_encountered,
             nodes_buffered, score_buffered,
             nodes_visualized, score_visualized,
-            nodes_hidden, myviz->get_netsstats().c_str() );
+            nodes_hidden, netsstats );
       }
 
       // sleep if gephi server is specified to in between sent events
@@ -358,7 +360,7 @@ int do_filter( int verbose, string viztype,
       cout<<"Total nodes encountered: "<<all_nodes.size()
           <<", total nodes drawn: "<<myviz->get_how_many_drawn()<<endl;
 
-   if (verbose>3) {
+   if (verbose>4) {
       myclockcollector.printall();
       myclockcollector.resetall();
    }

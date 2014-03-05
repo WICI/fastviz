@@ -49,7 +49,7 @@ public:
 	unsigned get_nodes_visualized(){ return nodes_visualized; }
 	unsigned get_nodes_not_visualized(){ return nodes_not_visualized; }
 	double get_total_score(){ return total_score; }
-	string get_netsstats() {};
+ 	virtual void get_netsstats(char *output) {};
 
 protected:
 
@@ -277,6 +277,12 @@ public:
 		change_nodes( netcol, vntmp, excluded );
 		change_edges( netcol, vntmp, eidm, extract_position<node_the>,
 						  edgeminweight, 0.4, 0.6, 0.8 );
+		if (verbose>4) {
+			cout<<"nodes visualized (draw): ";
+			for (vector <node_the>::iterator it=vntmp.begin(); it!=vntmp.end(); it++)
+				cout<<it->nm<<","<<it->pos<<" ";
+			cout<<endl;
+		}
    	if (verbose>0) allnodes_drawn.insert( vntmp.begin(), vntmp.end() );
 		swap(prevvisn,vntmp);
 		myclockcollector->collect("TTTTupdate_nodes_edges");
@@ -287,95 +293,139 @@ public:
 	}
 
    // get networks statistics
- 	string get_netsstats() {
-		igraph_t *g;
-		igraph_vector_t *weights;
+ 	void get_netsstats(char *output) {
+		netstats ns_buf, ns_viz;
+		igraph_t g;
+		igraph_vector_t weights;
 
-		// get the graph and the stats
-		netstats ns_buf;
+		// get the visualized graph and its properties
+		vector <vector <double> > viznet;
+		get_visualized_net( viznet );
+		igraph_vector_init(&weights, 0);
+		vv_to_igraph(viznet, g, weights);
+		ns_viz = get_netstats(g, weights);
+		igraph_vector_destroy(&weights);
+		igraph_destroy(&g);
+
+		// get the buffered graph and its properties
+		igraph_vector_init(&weights, 0);
 		vv_to_igraph(netcol->net, g, weights);
 		ns_buf = get_netstats(g, weights);
+		igraph_vector_destroy(&weights);
+		igraph_destroy(&g);
 
-		// get the graph and the stats
-		vector<unsigned> nodesdrawn;
-		for (set <node_the>::iterator it=allnodes_drawn.begin();
-				it!=allnodes_drawn.end(); it++)
-			nodesdrawn.push_back( it->pos );
-		netstats ns_viz;
-		sub_vv_to_igraph(netcol->net, nodesdrawn, g, weights);
-		ns_viz = get_netstats(g, weights);
-
- 		char *output;
 		sprintf( output,
-            "avgdeg_buffered=%8.0f, avgdeg_visualized=%8.0f, "
-            "avgstr_buffered=%8.0f, avgstr_visualized=%8.0f, "
+            "avgdeg_buffered=%9.2f, avgdeg_visualized=%9.2f, "
+            "avgstr_buffered=%9.2f, avgstr_visualized=%9.2f, "
             "ccglo_buffered=%6.3f, ccglo_visualized=%6.3f, "
             "ccloc_buffered=%6.3f, ccloc_visualized=%6.3f, "
-            "assortativity_buffered=%6.3f, assortativity_visualized=%6.3f",
+            "assdeg_buffered=%6.3f, assdeg_visualized=%6.3f, "
+            "assstr_buffered=%6.3f, assstr_visualized=%6.3f",
             ns_buf.avgdeg, ns_viz.avgdeg,
             ns_buf.avgstr, ns_viz.avgstr,
             ns_buf.ccglo, ns_viz.ccglo,
             ns_buf.ccloc, ns_viz.ccloc,
-            ns_buf.assortativity, ns_viz.assortativity );
+            ns_buf.assdeg, ns_viz.assdeg,
+            ns_buf.assstr, ns_viz.assstr );
 
-		return string(output);
    }
 
 private:
 
+	// get the visualized graph and its properties
+   void get_visualized_net( vector <vector <double> > &viznet ) {
+		// vector<unsigned> nodesdrawn;
+		// for (vector <node_the>::iterator it=prevvisn.begin();
+		// 	it!=prevvisn.end(); it++) nodesdrawn.push_back( it->pos );
+		// if (verbose>4) {
+		// 	cout<<"nodes visualized (get_netsstats): ";
+		// 	for (vector <node_the>::iterator it=prevvisn.begin();
+		// 		it!=prevvisn.end(); it++) cout<<it->nm<<","<<it->pos<<" ";
+		// 	cout<<endl;
+		// }
+
+		for (int i=0; i<prevvisn.size(); i++) {
+			vector <double> curnode;
+			for (int j=0; j<prevvisn.size(); j++)
+				curnode.push_back( netcol->net[prevvisn[i].pos][prevvisn[j].pos] );
+			viznet.push_back( curnode );
+		}
+
+      if (verbose>3) {
+         cout<<"viznet network (full):"<<endl;
+         for (int i=0; i<viznet.size(); i++) cout<<prevvisn[i].nm<<" ";
+         cout<<endl;
+         for (int i=0; i<viznet.size(); i++) {
+            for (int j=0; j<viznet.size(); j++)
+               cout<<viznet[i][j]<<" ";
+            cout<<endl;
+         }
+      }
+   }
+
    struct netstats {
    	netstats() {};
    	netstats( double avgdeg, double avgstr, double ccglo, double ccloc,
-   			double assortativity){
+   			double assdeg, double assstr ){
    		this->avgdeg = avgdeg;
    		this->avgstr = avgstr;
    		this->ccglo = ccglo;
    		this->ccloc = ccloc;
-   		this->assortativity = assortativity;
+   		this->assdeg = assdeg;
+   		this->assstr = assstr;
    	}
-   	double avgdeg, avgstr, ccglo, ccloc, assortativity;
+   	double avgdeg, avgstr, ccglo, ccloc, assdeg, assstr;
  	   netstats& operator=(const netstats &other) {
    		this->avgdeg = other.avgdeg;
    		this->avgstr = other.avgstr;
    		this->ccglo = other.ccglo;
    		this->ccloc = other.ccloc;
-   		this->assortativity = other.assortativity;
+   		this->assdeg = other.assdeg;
+   		this->assstr = other.assstr;
    	}
    };
 
    // get networks statistics
- 	netstats get_netstats( igraph_t *g, igraph_vector_t *weights,
+ 	netstats get_netstats( igraph_t &g, igraph_vector_t &weights,
  			igraph_bool_t directed = false ) {
 
 		// get degree
 		igraph_real_t avgdeg;
-		igraph_vector_t *degrees;
-		igraph_degree( g, degrees, igraph_vss_all(), IGRAPH_ALL, directed);
-		for (int i=0; i<igraph_vector_size(degrees); i++)
-			avgdeg+=VECTOR(*degrees)[i];
-		avgdeg /= igraph_vector_size(degrees);
+		igraph_vector_t degrees;
+		igraph_vector_init(&degrees, 0);
+		igraph_degree( &g, &degrees, igraph_vss_all(), IGRAPH_ALL, directed);
+		for (int i=0; i<igraph_vector_size(&degrees); i++)
+			avgdeg+=VECTOR(degrees)[i];
+		cout<<"degree: "<<avgdeg<<" "<<igraph_vector_size(&degrees)<<endl;
+		avgdeg /= 1.0*igraph_vector_size(&degrees);
 
 		// get strength
 		igraph_real_t avgstr;
-		igraph_vector_t *strengths;
-		igraph_strength( g, strengths, igraph_vss_all(), IGRAPH_ALL, directed, weights);
-		for (int i=0; i<igraph_vector_size(strengths); i++)
-			avgstr+=VECTOR(*strengths)[i];
-		avgstr /= igraph_vector_size(strengths);
+		igraph_vector_t strengths;
+		igraph_vector_init(&strengths, 0);
+		igraph_strength( &g, &strengths, igraph_vss_all(), IGRAPH_ALL, directed, &weights);
+		for (int i=0; i<igraph_vector_size(&strengths); i++)
+			avgstr+=VECTOR(strengths)[i];
+		avgstr /= 1.0*igraph_vector_size(&strengths);
 
 		// get cc
-		igraph_real_t *ccglo;
-		igraph_transitivity_undirected( g, ccglo, IGRAPH_TRANSITIVITY_NAN );
-		igraph_real_t *ccloc;
-		igraph_transitivity_avglocal_undirected( g, ccloc,
-			IGRAPH_TRANSITIVITY_NAN );
+		igraph_real_t ccglo;
+		igraph_transitivity_undirected( &g, &ccglo,
+			IGRAPH_TRANSITIVITY_ZERO );
+		igraph_real_t ccloc;
+		igraph_transitivity_avglocal_undirected( &g, &ccloc,
+			IGRAPH_TRANSITIVITY_ZERO );
 
 		// get assortativity
-		igraph_real_t *assortativity;
-		igraph_assortativity_nominal( g, degrees, assortativity, directed );
+		igraph_real_t assdeg, assstr;
+		igraph_assortativity_nominal( &g, &degrees, &assdeg, directed );
+		igraph_assortativity_nominal( &g, &strengths, &assstr, directed );
 
-		netstats output( (double)avgdeg, (double)avgstr,
-			(double)*ccglo, (double)*ccloc, (double)*assortativity);
+		igraph_vector_destroy(&degrees);
+		igraph_vector_destroy(&strengths);
+
+		netstats output( (double)avgdeg, (double)avgstr, (double)ccglo,
+							  (double)ccloc, (double)assdeg, (double)assstr );
 		return output;
    }
 
