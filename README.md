@@ -87,25 +87,18 @@ parent directory of the project:
 
 Input format
 ------------
-The dynamic network that is given as the input to the filtering tool can have multiple edges and it can be either unweigthed or weigthed. The input file has to be sorted in chronological order with the epoch time used as time stamps. The input files have the following format for each of its lines
-
-  *  Unweigthed links  - files with the extension ``sdnet``:
-
-    t1 n1 n2
-    t2 n1 n3 n4
-    ...
-
-     Where t1 is an epoch time, n1 stands for node 1, and n2 stands for node 2.
-
-  *  Weigthed links - files with the extension ``wdnet``, to run the filtering method for this format use the ``--weigthed`` flag:
+The dynamic network that is given as the input to the filtering tool can have multiple edges and it can be either weigthed or unweigthed. The input file has to be sorted in chronological order with the epoch time used as time stamps. The input files have the following format for each of its lines:
 
     t1 n1 n2 w1
     t2 n1 n3 n4 w2
     ...
 
-     Where t1 is an epoch time, n1 stands for node 1, n2 stands for node 2, and w1 is the corresponding weight of the connection(s).
+Where `t1` is an epoch time, `n1` stands for node 1, `n2` stands for node 2, and `w1` is the corresponding weight of the connection(s).
 
-One cas see examples of ``sdnet`` and  ``wdnet`` input files in the directory ``data``.
+  *  Weigthed links - files with the extension ``wdnet``, to run the filtering method for this format use the ``--weigthed`` flag
+  *  Unweigthed links  - files with the extension ``sdnet``, the same format, except the weights are not stored in the files
+
+One cas see examples of ``wdnet`` and  ``sdnet`` input files in the directory ``data``.
 
 
 Re-creating the demo movies
