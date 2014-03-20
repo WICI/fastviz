@@ -20,7 +20,7 @@ Dependencies
 
 The tools have been tested under Linux and Mac OS systems.
 
-The filtering tool is written in C++ and needs to be compiled. The visualizing tool is a Python script, that requires Python 2.6 or higher.
+The filtering tool is written in C++ and needs to be compiled. The visualizing tool is a Python script requiring Python 2.6 or higher.
 
 Before proceeding to next point of these instructions please check that all the required dependencies specified below are present on your system.
 
@@ -142,7 +142,7 @@ and in the panel called ``Streaming`` select ``Server``, and run it.
 To make the visualization look better in the ``Labels`` panels turn on
 node labels, select option ``Size`` proportional to ``Node size``, and
 with the slider reduce the size of labels by half. Finally, get a
-graph layout running (e.g. Fruchterman) in the panel called
+graph layout running (e.g., Fruchterman) in the panel called
 ``Layout``.
 
 To launch stream the visualization directly to Gephi for the selected
@@ -150,7 +150,7 @@ To launch stream the visualization directly to Gephi for the selected
 
     ./run.sh gephi json_file server_ip_address time_contraction
 
-The parameter time_contraction is important here. If is low, e.g. 100,
+The parameter time_contraction is important here. If is low (e.g., 100)
 for a dataset that has a time span of 100 years, then the visualization
 will last 1 year, needless to say way to long. To learn how to set the parameters of the tools please see Appendix B of our publication (available at http://arxiv.org/abs/1308.0309).
 
