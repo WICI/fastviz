@@ -33,8 +33,6 @@ command line tools:
      it can be installed internally from Gephi
   *  igraph library (http://igraph.sourceforge.net/).
 
-The main file of the filtering tool: ``src/visualize_tweets_finitefile.cpp``.
-
 The visualizing tool has the following dependencies on the external libraries and
 command line tools:
   *  igraph library (http://igraph.sourceforge.net/), with igraph Python
@@ -46,8 +44,6 @@ command line tools:
   *  mencoder command line tool (http://en.wikipedia.org/wiki/Mencoder)
      It is a standard tool present in many modern systems and available in
      standard repositories.
-
-The main file of the visualizing tool: ``scripts/DynamicGraph_wici.py``.
 
 Configuring and building
 ------------------------
@@ -131,7 +127,7 @@ stored in the directory ``data`` and save them as ``avi`` in the directory
 Creating your own movies
 ------------------------
 
-You can use the tools to create your own movies of dynamic networks. To learn how to set the parameters of the tools please see Appendix B of our publication (available at http://arxiv.org/abs/1308.0309). The parameters of the filtering tool are to be provided as arguments to ``visualize_tweets_finitefile`` (run ``visualize_tweets_finitefile -h`` for details), while the parameters of the visualizing tool are stored in the configuration file ``scripts/Constants.py`.`
+You can use the tools to create your own movies of dynamic networks. To learn how to set the parameters of the tools please see Appendix B of our publication (available at http://arxiv.org/abs/1308.0309). The parameters of the filtering tool are to be provided as arguments to ``visualize_tweets_finitefile`` (run ``visualize_tweets_finitefile -h`` for details), while the parameters of the visualizing tool are stored in the configuration file [scripts/Constants.py](scripts/Constants.py).
 
 Launching interactive visualizations
 ------------------------------------
