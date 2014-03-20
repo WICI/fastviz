@@ -287,16 +287,6 @@ int do_filter( int verbose, string viztype,
       }
 
       //=====================================================================
-      // forgetting
-      //=====================================================================
-      //if (total_links%10==0)
-      if (forgetevery>0) if (frame%forgetevery==0) {
-         mynet->forget_connections(forgetconst);
-         total_score *= forgetconst;
-      }
-      myclockcollector.collect("TTTTnonmatchingkeywords+forgetting");
-
-      //=====================================================================
       // visualize selected set of nodes (creates data for a frame)
       //=====================================================================
       if (server=="")
@@ -339,6 +329,17 @@ int do_filter( int verbose, string viztype,
             nodes_visualized, score_visualized,
             nodes_hidden, netsstats );
       }
+
+      //=====================================================================
+      // forgetting
+      //=====================================================================
+      //if (total_links%10==0)
+      if (forgetevery>0) if (frame%forgetevery==0) {
+         mynet->forget_connections(forgetconst);
+         total_score *= forgetconst;
+      }
+      myclockcollector.collect("TTTTnonmatchingkeywords+forgetting");
+
 
       // sleep if gephi server is specified to in between sent events
       if (server!="") {

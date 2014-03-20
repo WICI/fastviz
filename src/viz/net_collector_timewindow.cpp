@@ -42,6 +42,10 @@ public:
          }
    }
 
+   unsigned get_nodes_number() {
+      return nodes_number;
+   }
+
    void update_net_collector_base () {
       string name1, name2;
       unsigned id1, id2, newid1, newid2;
@@ -81,6 +85,7 @@ public:
          strengths[id1] += weight;
          strengths[id2] += weight;
       }
+      nodes_number = namepos_all.size();
 
       // sort the strengths
       // cout<<"u"; cout.flush();
@@ -160,6 +165,7 @@ private:
    double timewindow;
    clock_collectors *myclockcollector;
    unsigned verbose;
+   unsigned nodes_number;
 };
 
 

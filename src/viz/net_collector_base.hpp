@@ -24,17 +24,18 @@ public:
 		for (int i=0; i<names.size(); i++) names[i]="";
 	}
 
-   unsigned get_nodes_number() {
-   	unsigned result;
-		for (int i=0; i<names.size(); i++) if (names[i]!="") result++;
-		return result;
-   }
 
    double get_total_score() {
    	double result=0;
 		for (int i=0; i<net.size(); i++)
 			for (int j=0; j<net[i].size(); j++) if (i!=j)
 				result += net[i][j];
+		return result;
+   }
+
+	virtual unsigned get_nodes_number() {
+   	unsigned result=0;
+		for (int i=0; i<names.size(); i++) if (names[i]!="") result++;
 		return result;
    }
 

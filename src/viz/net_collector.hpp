@@ -183,13 +183,14 @@ public:
 		//boost::this_thread::sleep(boost::posix_time::milliseconds(p_sleep));
 	}
 
-	// net_collector_base is already up-to-date
+	// no need to do anything, net_collector_base is already up-to-date
 	void update_net_collector_base () {}
 
 	// forgetting
 	void forget_connections (double forgetfactor) {
-		for (int i=0; i<net.size(); i++) for (int j=0; j<net[i].size(); j++)
-			if (net[i][j]!=0) net[i][j]*=forgetfactor;
+		for (int i=0; i<net.size(); i++)
+			for (int j=0; j<net[i].size(); j++)
+				net[i][j]*=forgetfactor;
 	}
 
 private:

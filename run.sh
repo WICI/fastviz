@@ -24,52 +24,68 @@ function get_shared_opts {
    fi
    local shared_opts="--verbose 2 --inputformat weighted --input data/$net.wdnet"
    shared_opts+=" --timecontraction $vtc --edgemin $edgemin"
-   if [ "$net" == "osama" ]; then
-      shared_opts+=" --label1 'death of' --label2 'Osama bin Laden'"
-   fi
-   if [ "$net" == "superbowl" ]; then
-      shared_opts+=" --label1 'hashtags during the' --label2 '#superbowl'"
-   fi
-   if [ "$net" == "patents_full" ]; then
-      shared_opts+=" --label1 'words from' --label2 'patent titles'"
-   fi
-   if [ "$net" == "imdb" ]; then
-      shared_opts+=" --label1 'plot keywords' --label2 'of movies'"
-   fi
    echo $shared_opts
 }
 
+function get_label1 {
+   if [ ! -f data/$net.wdnet ]; then
+      gunzip -c data/$net.wdnet.gz > data/$net.wdnet;
+   fi
+   local label=""
+   if [ "$net" == "osama" ]; then label="death of"; fi
+   if [ "$net" == "superbowl" ]; then label="hashtags during the"; fi
+   if [ "$net" == "patents_full" ]; then label="words from"; fi
+   if [ "$net" == "imdb" ]; then label="plot keywords"; fi
+   echo $label
+}
+
+function get_label2 {
+   if [ ! -f data/$net.wdnet ]; then
+      gunzip -c data/$net.wdnet.gz > data/$net.wdnet;
+   fi
+   local label=""
+   if [ "$net" == "osama" ]; then label="Osama bin Laden"; fi
+   if [ "$net" == "superbowl" ]; then label="#superbowl"; fi
+   if [ "$net" == "patents_full" ]; then label="US patent titles"; fi
+   if [ "$net" == "imdb" ]; then label="of movies"; fi
+   echo $label
+}
+
+
 function run_fastviz {
    local shared_opts="$(get_shared_opts) $1"
+   local label1="$(get_label1)"
+   local label2="$(get_label2)"
    local viztype_opts="--viztype fastviz --forgetconst $vfc"
    local output_suffix="_fastviz"
    if [[ $1 == *"--hide_singletons off"* ]]; then
       output_suffix+="_withsingletons";
    fi
    viztype_opts+=" --output data/${net}${output_suffix}"
-   # echo "./visualize_tweets_finitefile $shared_opts $viztype_opts"
-   ./visualize_tweets_finitefile $shared_opts $viztype_opts\
+   ./visualize_tweets_finitefile $shared_opts $viztype_opts \
+      --label1 "$label1" --label2 "$label2" \
       > logs/diffnet_${net}${output_suffix}.log
 }
 
 function run_timewindow {
    local shared_opts="$(get_shared_opts) $1"
+   local label1="$(get_label1)"
+   local label2="$(get_label2)"
    local output_suffix="_timewindow"
-   if [[ $1 != "" ]];
+   local vtwmultip=1;
+   if [[ $1 == "wide" ]];
       then
          local vtwmultip=$1;
          output_suffix+="_wide";
-      else
-         local vtwmultip=1;
    fi
    local vtw=$(echo "scale=0; $vtwmultip*$vtc/(1.0-$vfc)/3.0"|bc -l)
-   local viztype_opts="--viztype timewindow --maxstored 10000 --timewindow $vtw"
+   local viztype_opts="--viztype timewindow --maxstored 2000 --timewindow $vtw"
    if [[ $1 == *"--hide_singletons off"* ]]; then
       output_suffix+="_withsingletons";
    fi
    viztype_opts+=" --output data/${net}${output_suffix}"
-   # echo "./visualize_tweets_finitefile $shared_opts $viztype_opts"
-   ./visualize_tweets_finitefile $shared_opts $viztype_opts\
+   ./visualize_tweets_finitefile $shared_opts $viztype_opts \
+      --label1 "$label1" --label2 "$label2" \
       > logs/diffnet_${net}${output_suffix}.log
 }
 
@@ -114,28 +130,12 @@ else
    "demo-diffnets" )
       echo -n "Launched generation of differential network files "
 
-      # net=osama; echo -n "data/$net.sdnet "
-      # if [ -f data/$net.sdnet.gz ]; then gunzip -c data/$net.sdnet.gz > data/$net.sdnet; fi
-      # time ./visualize_tweets_finitefile --verbose 2 --input data/$net.sdnet --timecontraction 500 --maxvisualized 50 --forgetconst 0.6 --edgemin 0.95 --forgetevery 40 --output "data/${net}" --label1 "death of" --label2 "Osama bin Laden" > logs/diffnet_$net.log &
-
-      # net=superbowl; echo -n "data/$net.sdnet "
-      # if [ -f data/$net.sdnet.gz ]; then gunzip -c data/$net.sdnet.gz > data/$net.sdnet; fi
-      # time ./visualize_tweets_finitefile --verbose 2 --input data/$net.sdnet --timecontraction 3600 --maxvisualized 50 --forgetconst 0.6 --edgemin 10.0 --forgetevery 20 --output "data/${net}" --label1 "hashtags during the" --label2 "#superbowl" > logs/diffnet_$net.log &
-
-      # net=patents_full; echo -n "data/$net.sdnet "
-      # if [ -f data/$net.sdnet.gz ]; then gunzip -c data/$net.sdnet.gz > data/$net.sdnet; fi
-      # time ./visualize_tweets_finitefile --verbose 2 --input data/$net.sdnet --timecontraction $((3600*24*400)) --maxvisualized 50 --forgetconst 0.65 --edgemin 20 --forgetevery 10 --output "data/${net}" --label1 "words from" --label2 "patent titles" > logs/diffnet_$net.log &
-
-      # net=imdb; echo -n "data/$net.sdnet "
-      # if [ -f data/$net.sdnet.gz ]; then gunzip -c data/$net.sdnet.gz > data/$net.sdnet; fi
-      # time ./visualize_tweets_finitefile --verbose 2 --input data/$net.sdnet --timecontraction $((3600*24*365*3)) --maxvisualized 80 --forgetconst 0.75 --edgemin 10 --forgetevery 10 --output "data/${net}" --weighttype 2 --label1 "plot keywords" --label2 "of movies" > logs/diffnet_$net.log &
-
       echo
       echo "Finished. Differential networks in json format are saved in the 'data' subdirectory and logs are saved in the 'logs' subdirectory."
       ;;
    "demo-movies" )
       echo "Launching generation of movies."
-      for myfile in data/*.json; do
+      for myfile in data/*{timewindow,fastviz}.json; do
          python scripts/DynamicGraph_wici.py $myfile
       done
       echo "Finished. Movies are saved in the 'movies' subdirectory."
@@ -153,33 +153,33 @@ else
       net="osama"; vtc=500; vfc=0.9; edgemin=0.95
       echo -n "data/$net.wdnet "
       run_fastviz
-      run_fastviz "--hide_singletons off"
-      run_timewindow
-      run_timewindow 10
+      # run_fastviz "--hide_singletons off"
+      # run_timewindow
+      # run_timewindow "wide"
       wait
 
       net="superbowl"; vtc=3600; vfc=0.8; edgemin=10.0
       echo -n "data/$net.wdnet "
       run_fastviz
-      run_fastviz "--hide_singletons off"
-      run_timewindow
-      run_timewindow 10
-      wait
-
-      net="patents_full"; vtc=$((3600*24*400)); vfc=0.65; edgemin=20
-      echo -n "data/$net.wdnet "
-      run_fastviz
-      run_fastviz "--hide_singletons off"
-      run_timewindow
-      run_timewindow 10
+      # run_fastviz "--hide_singletons off"
+      # run_timewindow
+      # run_timewindow "wide"
       wait
 
       net="imdb"; vtc=$((3600*24*365*3)); vfc=0.75; edgemin=10
       echo -n "data/$net.wdnet "
       run_fastviz
-      run_fastviz "--hide_singletons off"
-      run_timewindow
-      run_timewindow 10
+      # run_fastviz "--hide_singletons off"
+      # run_timewindow
+      # run_timewindow "wide"
+      wait
+
+      net="patents_full"; vtc=$((3600*24*400)); vfc=0.65; edgemin=20
+      echo -n "data/$net.wdnet "
+      run_fastviz
+      # run_fastviz "--hide_singletons off"
+      # run_timewindow
+      # run_timewindow "wide"
       wait
 
       echo
