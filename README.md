@@ -33,8 +33,6 @@ command line tools:
      it can be installed internally from Gephi
   *  igraph library (http://igraph.sourceforge.net/).
 
-The main file of the filtering tool: ``src/visualize_tweets_finitefile.cpp``.
-
 The visualizing tool has the following dependencies on the external libraries and
 command line tools:
   *  igraph library (http://igraph.sourceforge.net/), with igraph Python
@@ -46,8 +44,6 @@ command line tools:
   *  mencoder command line tool (http://en.wikipedia.org/wiki/Mencoder)
      It is a standard tool present in many modern systems and available in
      standard repositories.
-
-The main file of the visualizing tool: ``scripts/DynamicGraph_wici.py``.
 
 Configuring and building
 ------------------------
@@ -85,22 +81,6 @@ parent directory of the project:
     python scripts/DynamicGraph_wici.py data/test.json
 
 
-Input format
-------------
-The dynamic network that is given as the input to the filtering tool can have multiple edges and it can be either weigthed or unweigthed. The input file has to be sorted in chronological order with the epoch time used as time stamps. The input files have the following format for each of its lines:
-
-    t1 n1 n2 w1
-    t2 n1 n3 n4 w2
-    ...
-
-Where `t1` is an epoch time, `n1` stands for node 1, `n2` stands for node 2, and `w1` is the corresponding weight of the connection(s).
-
-  *  Weigthed links - files with the extension ``wdnet``, to run the filtering method for this format use the ``--weigthed`` flag
-  *  Unweigthed links  - files with the extension ``sdnet``, the same format, except the weights are not stored in the files
-
-One cas see examples of ``wdnet`` and  ``sdnet`` input files in the directory ``data``.
-
-
 Re-creating the demo movies
 ---------------------------
 
@@ -128,10 +108,27 @@ stored in the directory ``data`` and save them as ``avi`` in the directory
 
     ./run.sh demo-movies
 
+
+Input format
+------------
+The dynamic network that is given as the input to the filtering tool can have multiple edges and it can be either weigthed or unweigthed. The input file has to be sorted in chronological order with the epoch time used as time stamps. The input files have the following format for each of its lines:
+
+    t1 n1 n2 w1
+    t2 n1 n3 n4 w2
+    ...
+
+Where `t1` is an epoch time, `n1` stands for node 1, `n2` stands for node 2, and `w1` is the corresponding weight of the connection(s).
+
+  *  Weigthed links - files with the extension ``wdnet``, to run the filtering method for this format use the ``--weigthed`` flag
+  *  Unweigthed links  - files with the extension ``sdnet``, the same format, except the weights are not stored in the files
+
+One cas see examples of ``wdnet`` and  ``sdnet`` input files in the directory ``data``.
+
+
 Creating your own movies
 ------------------------
 
-You can use the tools to create your own movies of dynamic networks. To learn how to set the parameters of the tools please see Appendix B of our publication (available at http://arxiv.org/abs/1308.0309). The parameters of the filtering tool are to be provided as arguments to ``visualize_tweets_finitefile`` (run ``visualize_tweets_finitefile -h`` for details), while the parameters of the visualizing tool are stored in the configuration file ``scripts/Constants.py`.`
+You can use the tools to create your own movies of dynamic networks. To learn how to set the parameters of the tools please see Appendix B of our publication (available at http://arxiv.org/abs/1308.0309). The parameters of the filtering tool are to be provided as arguments to ``visualize_tweets_finitefile`` (run ``visualize_tweets_finitefile -h`` for details), while the parameters of the visualizing tool are stored in the configuration file [scripts/Constants.py](scripts/Constants.py).
 
 Launching interactive visualizations
 ------------------------------------
