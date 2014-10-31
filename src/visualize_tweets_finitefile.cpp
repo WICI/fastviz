@@ -192,14 +192,25 @@ int do_filter( int verbose, string viztype,
 
    if (viztype=="fastviz")
       mynet=new net_collector( maxstored, myclockcollector, verbose );
-   else
-      mynet=new net_collector_timewindow( maxstored, timewindow,  myclockcollector, verbose );
+   else if (viztype=="timewindow")
+      mynet=new net_collector_timewindow( maxstored,
+         timewindow,  forgetconst, viztype, myclockcollector, verbose );
+   else if (viztype=="exptimewindow")
+      mynet=new net_collector_timewindow( maxstored,
+         timewindow, forgetconst, viztype, myclockcollector, verbose );
+   else {
+      cout<<"Unrecongized viztype specified."<<endl;
+      return -1;
+   }
 
    myviz=new viz_selector( *mynet, *myoutput, myclockcollector, verbose );
 
    if (server=="")
       myviz->add_labels( pt::to_simple_string(pt::from_time_t(linktime)),
                         label1, label2, label3 );
+
+   ofstream ostream_buf( (output+"_buf.nodes").c_str() );
+   ofstream ostream_viz( (output+"_vis.nodes").c_str() );
 
    //=====================================================================
    // time to start
@@ -236,7 +247,7 @@ int do_filter( int verbose, string viztype,
             if ( linkpack.size()>1 ) {
                unsigned nodes = linkpack.size();
                total_score += weight * nodes * (nodes-1);
-               mynet->add_linkpack( linkpack, weight, linktime );
+               mynet->add_linkpack( linkpack, weight, linktime, verbose );
             }
          }
          if (verbose>1) {
@@ -294,16 +305,16 @@ int do_filter( int verbose, string viztype,
             pt::to_simple_string(pt::from_time_t(long(ts))));
 
       // update adjeciency matric if needed and draw
-      mynet->update_net_collector_base();
+      mynet->update_net_collector_base( );
       myviz->draw(maxvisualized, edgemin, hidden_node, hide_singletons);
 
       // debugging
       if (verbose>3) {
-         cout<<"mynet network (limited to 15x15 matrix):"<<endl;
-         for (int i=0; i<15; i++) cout<<mynet->names[i]<<" ";
+         cout<<"mynet network (limited to 10x10 matrix):"<<endl;
+         for (int i=0; i<10; i++) cout<<mynet->names[i]<<" ";
          cout<<endl;
-         for (int i=0; i<15; i++) {
-            for (int j=0; j<15; j++)
+         for (int i=0; i<10; i++) {
+            for (int j=0; j<10; j++)
                cout<<mynet->net[i][j]<<" ";
             cout<<endl;
          }
@@ -311,6 +322,8 @@ int do_filter( int verbose, string viztype,
 
       // output additional statistics
       if ( (verbose>0 && frame%30==0) || verbose>2 ) {
+         mynet->print_nodes( ostream_buf );
+         myviz->print_visualized_nodes( ostream_viz );
          auto nodes_encountered = all_nodes.size();
          auto score_encountered = total_score;
          auto nodes_buffered = mynet->get_nodes_number();
@@ -404,7 +417,7 @@ int main(int argc, char** argv) {
       ("label3", po::value<string>()->default_value(""),"")
       ("hide_node", po::value<string>()->default_value(""),
          "Hide given node in the visualizations")
-      ("hide_singletons", po::value<bool>()->default_value("true"),
+      ("hide_singletons", po::value<bool>()->default_value("false"),
          "Hide nodes without edges in the visualization")
       ("timecontraction", po::value<unsigned>()->default_value(3600), "")
       ("fps", po::value<unsigned>()->default_value(30), "")
@@ -437,7 +450,7 @@ int main(int argc, char** argv) {
    unsigned maxstored = vm["maxstored"].as<unsigned>();
    unsigned maxvisualized = vm["maxvisualized"].as<unsigned>();
    unsigned forgetevery = vm["forgetevery"].as<unsigned>();
-   if (viztype=="timewindow") forgetevery=0;
+   if (viztype!="fastviz") forgetevery=0;
    double forgetconst = vm["forgetconst"].as<double>();
    double timewindow = vm["timewindow"].as<double>();
    double edgemin = vm["edgemin"].as<double>();

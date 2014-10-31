@@ -58,9 +58,6 @@ function run_fastviz {
    local label2="$(get_label2)"
    local viztype_opts="--viztype fastviz --forgetconst $vfc"
    local output_suffix="_fastviz"
-   if [[ $1 == *"--hide_singletons off"* ]]; then
-      output_suffix+="_withsingletons";
-   fi
    viztype_opts+=" --output data/${net}${output_suffix}"
    ./visualize_tweets_finitefile $shared_opts $viztype_opts \
       --label1 "$label1" --label2 "$label2" \
@@ -75,14 +72,30 @@ function run_timewindow {
    local vtwmultip=1;
    if [[ $1 == "wide" ]];
       then
-         local vtwmultip=$1;
+         local vtwmultip=10;
          output_suffix+="_wide";
    fi
    local vtw=$(echo "scale=0; $vtwmultip*$vtc/(1.0-$vfc)/3.0"|bc -l)
    local viztype_opts="--viztype timewindow --maxstored 2000 --timewindow $vtw"
-   if [[ $1 == *"--hide_singletons off"* ]]; then
-      output_suffix+="_withsingletons";
+   viztype_opts+=" --output data/${net}${output_suffix}"
+   ./visualize_tweets_finitefile $shared_opts $viztype_opts \
+      --label1 "$label1" --label2 "$label2" \
+      > logs/diffnet_${net}${output_suffix}.log
+}
+
+function run_exp_timewindow {
+   local shared_opts="$(get_shared_opts) $1"
+   local label1="$(get_label1)"
+   local label2="$(get_label2)"
+   local output_suffix="_exptimewindow"
+   local vtwmultip=1;
+   if [[ $1 == "wide" ]];
+      then
+         local vtwmultip=10;
+         output_suffix+="_wide";
    fi
+   local vtw=$(echo "scale=0; $vtwmultip*$vtc/3.0"|bc -l)
+   local viztype_opts="--viztype exptimewindow --maxstored 2000 --timewindow $vtw --forgetconst $vfc"
    viztype_opts+=" --output data/${net}${output_suffix}"
    ./visualize_tweets_finitefile $shared_opts $viztype_opts \
       --label1 "$label1" --label2 "$label2" \
@@ -152,34 +165,30 @@ else
 
       net="osama"; vtc=500; vfc=0.9; edgemin=0.95
       echo -n "data/$net.wdnet "
-      run_fastviz
-      # run_fastviz "--hide_singletons off"
-      # run_timewindow
-      # run_timewindow "wide"
+      run_fastviz &
+      # run_timewindow &
+      # run_exp_timewindow &
       wait
 
       net="superbowl"; vtc=3600; vfc=0.8; edgemin=10.0
       echo -n "data/$net.wdnet "
-      run_fastviz
-      # run_fastviz "--hide_singletons off"
-      # run_timewindow
-      # run_timewindow "wide"
+      run_fastviz &
+      # run_timewindow &
+      # run_exp_timewindow &
       wait
 
       net="imdb"; vtc=$((3600*24*365*3)); vfc=0.75; edgemin=10
       echo -n "data/$net.wdnet "
-      run_fastviz
-      # run_fastviz "--hide_singletons off"
-      # run_timewindow
-      # run_timewindow "wide"
+      run_fastviz &
+      # run_timewindow &
+      # run_exp_timewindow &
       wait
 
       net="patents_full"; vtc=$((3600*24*400)); vfc=0.65; edgemin=20
       echo -n "data/$net.wdnet "
-      run_fastviz
-      # run_fastviz "--hide_singletons off"
-      # run_timewindow
-      # run_timewindow "wide"
+      run_fastviz &
+      # run_timewindow &
+      # run_exp_timewindow &
       wait
 
       echo

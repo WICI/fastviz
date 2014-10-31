@@ -51,6 +51,8 @@ public:
 	double get_total_score(){ return total_score; }
  	virtual void get_netsstats(char *output) {};
 
+   virtual void print_visualized_nodes(ofstream &ostream){};
+
 protected:
 
    // create a list of all stored nodes sorted by strength and select the strongest
@@ -287,7 +289,9 @@ public:
 		swap(prevvisn,vntmp);
 		myclockcollector->collect("TTTTupdate_nodes_edges");
 
-		oc->update();
+		// print the differential update to the file
+		if (maxvisualized<100) oc->update();
+
 		myclockcollector->collect("TTTTgcupdate");
 
 	}
@@ -328,6 +332,18 @@ public:
             ns_buf.assdeg, ns_viz.assdeg,
             ns_buf.assstr, ns_viz.assstr );
 
+   }
+
+   void print_visualized_nodes(ofstream &ostream){
+		for (auto it=prevvisn.begin(); it!=prevvisn.end(); it++)
+			ostream<<it->nm<<" ";
+		ostream<<endl;
+
+      // debug
+      // ostream.precision(2);
+      // for (auto it=prevvisn.begin(); it!=prevvisn.end(); it++)
+      //    ostream<<it->nm<<" "<<it->str<<" | ";
+      // ostream<<endl;
    }
 
 private:
@@ -386,14 +402,14 @@ private:
    };
 
    // get networks statistics
- 	netstats get_netstats( igraph_t &g, igraph_vector_t &weights,
- 			igraph_bool_t directed = false ) {
+ 	netstats get_netstats( igraph_t &g, igraph_vector_t &weights ) {
 
 		// get degree
 		igraph_real_t avgdeg;
 		igraph_vector_t degrees;
 		igraph_vector_init(&degrees, 0);
-		igraph_degree( &g, &degrees, igraph_vss_all(), IGRAPH_ALL, directed);
+      igraph_bool_t loops = false;
+		igraph_degree( &g, &degrees, igraph_vss_all(), IGRAPH_ALL, loops);
 		for (int i=0; i<igraph_vector_size(&degrees); i++)
 			avgdeg+=VECTOR(degrees)[i];
 		cout<<"degree: "<<avgdeg<<" "<<igraph_vector_size(&degrees)<<endl;
@@ -403,7 +419,7 @@ private:
 		igraph_real_t avgstr;
 		igraph_vector_t strengths;
 		igraph_vector_init(&strengths, 0);
-		igraph_strength( &g, &strengths, igraph_vss_all(), IGRAPH_ALL, directed, &weights);
+		igraph_strength( &g, &strengths, igraph_vss_all(), IGRAPH_ALL, loops, &weights);
 		for (int i=0; i<igraph_vector_size(&strengths); i++)
 			avgstr+=VECTOR(strengths)[i];
 		avgstr /= 1.0*igraph_vector_size(&strengths);
@@ -418,6 +434,7 @@ private:
 
 		// get assortativity
 		igraph_real_t assdeg, assstr;
+      igraph_bool_t directed = false;
 		igraph_assortativity_nominal( &g, &degrees, &assdeg, directed );
 		igraph_assortativity_nominal( &g, &strengths, &assstr, directed );
 

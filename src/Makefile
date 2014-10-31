@@ -1,10 +1,3 @@
-# export BOOST_SRC=~/scitools/
-# export BOOST_BIN=~/scitools/boost_1_53_0/lib
-# export JSON_SRC=~/scitools/jsoncpp-src-0.5.0/include
-# export JSON_LIBMT=~/scitools/jsoncpp-src-0.5.0/libs/linux-gcc-4.2.4/libjson_linux-gcc-4.2.4_libmt
-# export CPPNET_SRC=~/scitools/cpp-netlib-0.9.4
-# export CPPNET_BIN=~/scitools/cpp-netlib-0.9.4/build/libs/network/src
-
 
 CC = g++
 CXX = g++

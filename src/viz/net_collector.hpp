@@ -11,6 +11,7 @@
 #include <iostream>
 #include <set>
 #include <vector>
+#include <list>
 
 #include <pms/clock_collector.hpp>
 #include <viz/node.hpp>
@@ -31,11 +32,11 @@ public:
 	}
 
 	void add_linkpack (vector <string> &linkpack, double weight=1,
-			long ts=-1) {
+			long ts=-1, int verbose=0) {
 		typedef typename vector <string>::const_iterator ittype;
 
 		double m=linkpack.size();
-		vector<set<node_base>::iterator> toupdate(m);
+		list<set<node_base>::iterator> toupdate;
 		double edgeincrement = weight; //edge score
 		double nodeincrement; //node score
 
@@ -58,82 +59,133 @@ public:
 				// stored?
 				node_base node;
 				node.nm=(*fp);
-				toupdate[iupd]=stored.find(node);
+				toupdate.push_back(stored.find(node));
 				myclockcollector->collect("TTTTfindinstored");
 
-				// if not among the stored nodes
-				if (toupdate[iupd]==stored.end()) {
+				// debug
+				if (verbose>3) {
+					cout<<"New node: "<<node.nm<<" weight="<<weight<<" str="<<nodeincrement<<endl;
+					print_weakest();
+					print_stored();
+				}
 
-					// let's add
-					if (nstored<net.size()) {
-						node.pos=nstored;
+				// if not among the stored nodes
+				if (toupdate.back()==stored.end()) {
+
+					// let's add the new node
+					if (stored.size()<net.size()) {
+						node.pos=stored.size();
 						names[node.pos]=node.nm;
 						net[node.pos][node.pos]=nodeincrement;
-
-						// but if it's weak then it won't stay long...
-						if (nodeincrement<=minstr) {
-							if (nodeincrement<minstr) {
-								minstr=nodeincrement;
-								weakest.clear();
-								weakest.push_back(node.pos);
-							}
-							else {
-								weakest.push_back(node.pos);
-							}
-						}
 					}
-					// or exchange the weakest one with the new one
+
+					// or exchange the weakest node with the new one
 					else {
+
 						// assign the position
 						assert(weakest.size()>0);
 						node.pos=weakest.front();
 
 						// erase from weakest, update stored names, and remove from stored names
 						weakest.pop_front();
+						{node_base weaknode; weaknode.nm=names[node.pos];
+						set<node_base>::iterator foundit=stored.find(weaknode);
+						assert(foundit!=stored.end());
+						for (auto it=toupdate.begin(); it!=toupdate.end(); it++)
+							if (*it==foundit) {
+								// cout<<"A node destined for update removed: "<<foundit->nm;
+								// cout<<" while adding node: "<<node.nm<<endl;
+								toupdate.erase(it);
+							}
+						stored.erase(foundit);}
 						names[node.pos]=node.nm;
-						{node_base tmpnode; tmpnode.nm=names[node.pos];
-						set<node_base>::iterator foundit=stored.find(tmpnode);
-						if (foundit!=stored.end()) stored.erase(foundit);}
 
 						// update matrix of weights
 						for (unsigned j=0; j<net.size(); j++) {
-							if (net[j][node.pos]) {
-								//net[j][j]-=net[j][node.pos];
-								//if (net[j][j]<minstr) refresh_weakest();
-								net[j][node.pos]=0;
-								net[node.pos][j]=0;
-							}
+							net[j][node.pos]=0;
+							net[node.pos][j]=0;
 						}
 						net[node.pos][node.pos]=nodeincrement;
 
 						// in case of weakest empty find new weakest elements
-						refresh_weakest();
+						refill_weakest();
 					}
 
-					// and let's insert the new one!
+					// but if it's weak then it won't stay long...
+					if (nodeincrement<=minstr) {
+						if (nodeincrement<minstr) {
+							minstr=nodeincrement;
+							weakest.clear();
+							weakest.push_back(node.pos);
+						}
+						else {
+							weakest.push_back(node.pos);
+						}
+					}
+
+					// and let's insert the new node
 					pair<set<node_base>::iterator,bool> insres;
 					insres=stored.insert(node);
-					nstored++;
-					assert(insres.second); //TODO to be commented out
-					toupdate[iupd]=insres.first;
+					assert(insres.second);
+					toupdate.back()=insres.first;
 
-				} //TODO add limitations for the size of stored
+				}
+
 				// if among the stored nodes then update the node strength and the weakest set
 				else {
+
 					// increment the score of the arriving node
-					double prevstr=net[(*toupdate[iupd]).pos][(*toupdate[iupd]).pos];
-					net[(*toupdate[iupd]).pos][(*toupdate[iupd]).pos]+=nodeincrement;
+					node.pos=(*toupdate.back()).pos;
+					double prevstr=net[node.pos][node.pos];
+					net[node.pos][node.pos]+=nodeincrement;
+
+					// debug, shouldn't happen
+					if (prevstr<minstr) {
+						cout<<"Error: a node with strength lower than minstr "<<prevstr<<" < "<<minstr<<endl;
+						print_weakest();
+						print_stored();
+					}
+
+					// if it was in the weakest set then leave the set now
 					if (prevstr==minstr) {
-						// if it was in the weakest set then leave the set now
 						{deque<unsigned>::iterator foundit=
-							find( weakest.begin(), weakest.end(), (*toupdate[iupd]).pos);
+							find( weakest.begin(), weakest.end(), node.pos);
 						if (foundit!=weakest.end()) weakest.erase(foundit);}
 
 						// in case of weakest empty find new weakest elements
-						refresh_weakest();
+						refill_weakest();
 					}
+
+					// debug, shouldn't happen
+					else {
+						deque<unsigned>::iterator foundit=
+							find( weakest.begin(), weakest.end(), node.pos);
+						if (foundit!=weakest.end()) {
+							cout<<"Error: found among weakest a node with strength "<<prevstr<<" > "<<minstr<<endl;
+							print_weakest();
+							print_stored();
+						}
+					}
+
 				}
-				iupd++;
+
+
+				// debug
+				if (verbose>3) {
+					cout<<"After buffering: "<<names[node.pos]<<" pos="<<node.pos
+						 <<" str="<<net[node.pos][node.pos]<<endl;
+					print_weakest();
+					print_stored();
+
+					deque<unsigned>::iterator foundit=
+						find( weakest.begin(), weakest.end(), node.pos);
+					if (net[node.pos][node.pos]>minstr && foundit!=weakest.end()) {
+						cout<<"This is a naughty node! (It's among the weakest but it's strength is high.)"<<endl;
+					}
+
+					cout<<endl;
+				}
+
 			}
 		}
 
@@ -142,22 +194,26 @@ public:
 		// now it's time to strengthen connection weights of the arriving nodes
 		if (toupdate.size()>1)
 		{
-			for (vector<set<node_base>::iterator>::const_iterator i = toupdate.begin();
-				  i != toupdate.end(); i++) {
-				for (vector<set<node_base>::iterator>::const_iterator j = toupdate.begin();
-					  j != toupdate.end(); j++) {
-					unsigned pos1=(**i).pos;
-					unsigned pos2=(**j).pos;
-					// debugging
-					//string nm1=(**i).nm;
-					//string nm2=(**j).nm;
+			for (auto it1 = toupdate.begin(); it1 != toupdate.end(); it1++) {
+				for (auto it2 = toupdate.begin(); it2 != toupdate.end(); it2++) {
+					unsigned pos1=(**it1).pos;
+					unsigned pos2=(**it2).pos;
+
+					// debug
+					//string nm1=(**it1).nm;
+					//string nm2=(**it2).nm;
 					if (pos1>net.size() || pos2>net.size()) {
+						cout<<"Nodes ids too high: "<<pos1<<" or "<<pos2<<endl;
+						cout.flush();
+						// cout<<" for nodes: "<<(**it1).nm<<" or "<<(**it2).nm<<endl;
+						cout.flush();
+						cout<<"Whole linkpack:"<<endl;
 						for (ittype fp = linkpack.begin(); fp != linkpack.end(); ++fp) {
 								cout<<(*fp)<<" ";
 								cout.flush();
 						}
-						for (vector<set<node_base>::iterator>::const_iterator k = toupdate.begin();
-							k != toupdate.end(); k++) {
+						cout<<"Whole toupdate list:"<<endl;
+						for (auto k = toupdate.begin(); k != toupdate.end(); k++) {
 								cout<<(**k).nm<<" "<<(**k).pos<<"|";
 								cout.flush();
 						}
@@ -188,6 +244,7 @@ public:
 
 	// forgetting
 	void forget_connections (double forgetfactor) {
+		minstr*=forgetfactor;
 		for (int i=0; i<net.size(); i++)
 			for (int j=0; j<net[i].size(); j++)
 				net[i][j]*=forgetfactor;
@@ -195,18 +252,37 @@ public:
 
 private:
 
+	void print_weakest() {
+		cout<<"Weakest:";
+		for (auto it=weakest.begin(); it!=weakest.end(); it++) {
+			auto pos=(*it);
+			cout<<" "<<names[pos]<<" "<<pos<<" "<<net[pos][pos]<<" | ";
+		}
+		cout<<endl;
+	}
+
+	void print_stored() {
+		cout<<"Stored:";
+		for (auto it=stored.begin(); it!=stored.end(); it++) {
+			auto pos=it->pos;
+			cout<<" "<<it->nm<<" "<<names[pos]<<" "<<pos<<" "<<net[pos][pos]<<" | ";
+		}
+		cout<<endl;
+	}
+
 	// in case of weakest empty find new weakest elements
-	void refresh_weakest() {
+	void refill_weakest() {
 		if (weakest.size()==0) {
 			double currminstr=1e100;
-			for (unsigned k=0; k<net.size(); k++) {
-				if (net[k][k]<=currminstr) {
-					if (net[k][k]<currminstr) {
-						currminstr=net[k][k];
+			for (auto it=stored.begin(); it!=stored.end(); it++) {
+				auto pos=it->pos;
+				if (net[pos][pos]<=currminstr) {
+					if (net[pos][pos]<currminstr) {
+						currminstr=net[pos][pos];
 						weakest.clear();
-						weakest.push_back(k);
+						weakest.push_back(pos);
 					}
-					else weakest.push_back(k);
+					else weakest.push_back(pos);
 				}
 			}
 			minstr=currminstr;
