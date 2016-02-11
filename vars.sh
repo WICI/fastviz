@@ -29,4 +29,11 @@ export CPPNET_SRC=FILL_HERE
 # e.g. CPPNET_BIN=~/cpp-netlib-0.10.1/build/libs/network/src
 export CPPNET_BIN=FILL_HERE
 
+# path to include directory of igraph library (http://igraph.sourceforge.net/)
+# e.g. IGRAPH_SRC=/usr/local/include/igraph
+export IGRAPH_SRC=/usr/local/include/igraph
+
+# path to the directory with binaries of igraph library
+# e.g. IGRAPH_BIN=~/cpp-netlib-0.10.1/build/libs/network/src
+export IGRAPH_BIN=/usr/local/lib
 
