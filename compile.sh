@@ -1,18 +1,18 @@
 #!/bin/bash
 
-. vars.sh
+. vars_pmsmbp.sh
 
-if [ ! -d "$BOOST_SRC" ]; then 
+if [ ! -d "$BOOST_SRC" ]; then
    echo "Boost include path does not exist"
    echo "Please input correct BOOST_SRC in the file vars.sh"
    exit
 fi
-if [ ! -d "$BOOST_BIN" ]; then 
+if [ ! -d "$BOOST_BIN" ]; then
    echo "Boost path to its binaries does not exist"
    echo "Please input correct BOOST_BIN in the file vars.sh"
    exit
 fi
-if [ ! -d "$JSON_SRC" ]; then 
+if [ ! -d "$JSON_SRC" ]; then
    echo "Json-cpp location does not exist"
    echo "Please input correct JSON_SRC in the file vars.sh"
    exit

@@ -91,12 +91,18 @@ public:
 						{node_base weaknode; weaknode.nm=names[node.pos];
 						set<node_base>::iterator foundit=stored.find(weaknode);
 						assert(foundit!=stored.end());
-						for (auto it=toupdate.begin(); it!=toupdate.end(); it++)
+
+						auto it=toupdate.begin();
+						while ( it!=toupdate.end() ) {
 							if (*it==foundit) {
 								// cout<<"A node destined for update removed: "<<foundit->nm;
 								// cout<<" while adding node: "<<node.nm<<endl;
-								toupdate.erase(it);
+								it=toupdate.erase(it);
 							}
+							else it++;
+						}
+
+
 						stored.erase(foundit);}
 						names[node.pos]=node.nm;
 
