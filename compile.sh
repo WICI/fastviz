@@ -1,6 +1,6 @@
 #!/bin/bash
 
-. vars_pmsmbp.sh
+. vars.sh
 
 if [ ! -d "$BOOST_SRC" ]; then
    echo "Boost include path does not exist"
