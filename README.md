@@ -20,18 +20,18 @@ Dependencies
 
 The tools have been tested under Linux and Mac OS systems.
 
-The filtering tool is written in C++ and needs to be compiled. The visualizing tool is a Python script requiring Python 2.6 or higher.
+The filtering tool is written in C++ and needs to be compiled using **gcc version 4.x**. The visualizing tool is a Python script requiring Python 2.6 or higher, located under the `/scripts/` subdirectory.
 
 Before proceeding to next point of these instructions please check that all the required dependencies specified below are present on your system.
 
 The filtering tool has the following dependencies on the external libraries and
 command line tools:
-  *  Boost library (http://www.boost.org/), version 1.44 or higher.
-  *  JsonCpp library (http://www.boost.org/), version 0.5.0 or higher.
+  *  Boost library (http://www.boost.org/), version 1.44 to 1.55 (Later versions contain a bug which causes the program to fail).
+  *  JsonCpp library (https://github.com/open-source-parsers/jsoncpp), version 0.5.0 or higher.
   *  cpp-netlib library (http://cpp-netlib.org), version 0.9.4 or higher.
-  *  Gephi (https://gephi.org/), with installed plugin Graph Streaming API,
+  *  Gephi (https://gephi.org/ and https://github.com/gephi/gephi), with installed plugin Graph Streaming API,
      it can be installed internally from Gephi
-  *  igraph library (http://igraph.sourceforge.net/).
+  *  igraph library (http://igraph.sourceforge.net/ - If running under Ubuntu, this can be installed with the Radiance package).
 
 The visualizing tool has the following dependencies on the external libraries and
 command line tools:
@@ -45,8 +45,12 @@ command line tools:
      It is a standard tool present in many modern systems and available in
      standard repositories.
 
-Configuring and building
-------------------------
+Configuring and building the filtering tool
+-------------------------------------------
+
+While the visualizing tool is written in Python and can be used with little configuration, the filtering tool is written in C++ and must be compiled from source using gcc 4.x (tested using 4.7.2).  
+
+When installing dependencies, try to install as many as possible using a package manager like apt.  Later version of Boost introduce a bug that causes the tool to fail, so it must be version 1.44 to 1.55.  jsoncpp can be built using SCONS.  cpp-netlib requires cmake and clang.  It is possible that Boost's network libraries won't be installed, but these libraries can be found bundled with cpp-netlib.  It may also be necessary to add a symbolic link to the boost binaries under the `src/` directory.
 
 To configure the system before the compilation of the filtering tool one needs to
 enter paths to the corresponding installed libraries in the configuration file
@@ -55,13 +59,19 @@ code run:
 
     ./compile.sh
 
-This command will compile and copy the executable visualize_tweets_finitefile
-to the parent directory of the project. Note that before running
+This command will compile into the executable `visualize_tweets_finitefile` and copy the executable to the parent directory of the project. Note that before running
 ``visualize_tweets_finitefile`` one needs to tell the linker where the compiled
 libraries are. The simplest way of achiving it is by following the instructions
 that are printed after ``compile.sh`` is successfully finished. The other
 possibility is to use ``run.sh`` for launching the tools. This small script
 configures the paths itself.
+
+Configuring and running the visualization tool
+----------------------------------------------
+
+In order to create videos using these tools, an edge list must be input into the filtering tool.  The filtering tool will create a json file which is then input into the visualization tool.  The visualization tool will create a set of .png images and then combine them into a .avi video file using the **mencoder** command line tool.  If mencoder is not installed on the system, the visualization tool will fail silently and simply not output a video.
+
+Among other settings, the color scheme of the resulting movie can be changed in the settings file [scripts/Constants.py](scripts/Constants.py).
 
 
 Running Tests
@@ -122,13 +132,15 @@ Where `t1` is an epoch time, `n1` stands for node 1, `n2` stands for node 2, and
   *  Weigthed links - files with the extension ``wdnet``, to run the filtering method for this format use the ``--weigthed`` flag
   *  Unweigthed links  - files with the extension ``sdnet``, the same format, except the weights are not stored in the files
 
-One cas see examples of ``wdnet`` and  ``sdnet`` input files in the directory ``data``.
+One can see examples of ``wdnet`` and  ``sdnet`` input files in the directory ``data``.
 
 
 Creating your own movies
 ------------------------
 
 You can use the tools to create your own movies of dynamic networks. To learn how to set the parameters of the tools please see Appendix B of our publication (available at http://arxiv.org/abs/1308.0309). The parameters of the filtering tool are to be provided as arguments to ``visualize_tweets_finitefile`` (run ``visualize_tweets_finitefile -h`` for details), while the parameters of the visualizing tool are stored in the configuration file [scripts/Constants.py](scripts/Constants.py).
+
+The length of the resulting video can be controlled by using the time_contraction argument sent to the filtering tool.  The time contraction is the ratio of the length of time (in seconds) that the input edge list covers to the length of the video (in seconds).  For example, if the time span of the edge list is 1 week, and you wanted a 30 second video, the time contraction parameter would be 20160 (1week * 7days * 24hours * 60minutes * 60seconds / 30seconds = 604800 seconds / 30 seconds = 20160)
 
 Launching interactive visualizations
 ------------------------------------
